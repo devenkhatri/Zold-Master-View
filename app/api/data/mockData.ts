@@ -12,6 +12,7 @@ export const mockOwners: Owner[] = [
     stickerNos: 'B-08',
     blockNumber: 'B',
     flatNumber: '404',
+    blockFlatNumber: 'B-404'
   },
   {
     id: '2',
@@ -24,6 +25,7 @@ export const mockOwners: Owner[] = [
     stickerNos: 'A-15',
     blockNumber: 'A',
     flatNumber: '201',
+    blockFlatNumber: 'A-201'
   },
   {
     id: '3',
@@ -36,6 +38,7 @@ export const mockOwners: Owner[] = [
     stickerNos: 'C-22',
     blockNumber: 'C',
     flatNumber: '105',
+    blockFlatNumber: 'C-105'
   },
 ];
 

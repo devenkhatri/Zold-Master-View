@@ -20,14 +20,23 @@ export const FilterControls = ({
 }: FilterControlsProps) => {
 
 
-  const [localSearchTerm, setLocalSearchTerm] = useState('');
+  const [localSearchTerm, setLocalSearchTerm] = useState(filters.searchTerm || '');
+
+  // Sync local state with filters prop
+  useEffect(() => {
+    setLocalSearchTerm(filters.searchTerm || '');
+  }, [filters.searchTerm]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalSearchTerm(e.target.value);
   };
 
   const handleSearch = () => {
-    onFiltersChange({ searchTerm: localSearchTerm });
+    if (localSearchTerm.trim()) {
+      onFiltersChange({ searchTerm: localSearchTerm.trim() });
+    } else {
+      onFiltersChange({ searchTerm: '' });
+    }
   };
 
   const handleClearSearch = () => {
@@ -57,7 +66,7 @@ export const FilterControls = ({
             <input
               type="text"
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Search owners and payments..."
+              placeholder="Search by flat, name, mobile, carno, stickerno, receiptno..."
               value={localSearchTerm}
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
