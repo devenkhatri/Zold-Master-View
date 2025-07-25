@@ -23,25 +23,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check if user is logged in on initial load
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/auth/me', {
+          credentials: 'include', // Important for sending cookies
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);
+        } else {
+          // If the session is invalid, clear any stale user data
+          setUser(null);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
     checkAuth();
+    
+    // Set up a timer to check auth status periodically (every 5 minutes)
+    const authCheckInterval = setInterval(checkAuth, 5 * 60 * 1000);
+    
+    // Clean up the interval on unmount
+    return () => clearInterval(authCheckInterval);
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'include', // Important for receiving cookies
         headers: {
           'Content-Type': 'application/json',
         },
@@ -53,21 +71,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userData);
         return true;
       }
+      
+      // If login failed, clear any stale user data
+      setUser(null);
       return false;
+      
     } catch (error) {
       console.error('Login failed:', error);
+      setUser(null);
       return false;
     }
   };
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include' // Important for sending cookies
+      });
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
+      // Clear user state and redirect to login
       setUser(null);
-      router.push('/login');
+      
+      // Force a full page reload to ensure all state is cleared
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      } else {
+        router.push('/login');
+      }
     }
   };
 

@@ -10,6 +10,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!loading && !user) {
+      // Store the current path in session storage before redirecting to login
+      const currentPath = window.location.pathname + window.location.search;
+      sessionStorage.setItem('loginRedirect', currentPath);
       router.push('/login');
     }
   }, [user, loading, router]);

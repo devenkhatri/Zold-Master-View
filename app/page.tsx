@@ -22,6 +22,18 @@ function Dashboard() {
     resetFilters 
   } = usePropertyData();
 
+  // Handle 'q' query parameter for auto-searching
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const searchQuery = searchParams.get('q');
+      
+      if (searchQuery && searchQuery !== filters.searchTerm) {
+        updateFilters({ searchTerm: searchQuery });
+      }
+    }
+  }, [filters.searchTerm, updateFilters]);
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -35,24 +47,25 @@ function Dashboard() {
                 <p className="text-blue-100 text-sm">Property & Payment Management System</p>
               </div>
             </div>
-            <div className="hidden md:block">
-              <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* <button
+                onClick={() => router.push('/')}
+                className="inline-flex items-center p-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                aria-label="Home"
+              >
+                <Home className="h-4 w-4 sm:mr-1" />
+                <span className="sr-only sm:not-sr-only sm:inline">Home</span>
+              </button> */}
+              {user && (
                 <button
-                  onClick={() => router.push('/')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={logout}
+                  className="inline-flex items-center p-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  aria-label="Logout"
                 >
-                  <Home className="h-4 w-4 mr-1" />
+                  <LogOut className="h-4 w-4 sm:mr-1" />
+                  <span className="sr-only sm:not-sr-only sm:inline">Logout</span>
                 </button>
-                {user && (
-                  <button
-                    onClick={logout}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  >
-                    <LogOut className="h-4 w-4 mr-1" />
-                    Logout
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -138,10 +151,11 @@ function Dashboard() {
                   </div>
                   <div className="mt-6 flex flex-wrap justify-center gap-3">
                     {[
-                      { text: "A101", type: "Flat Number" },
+                      { text: "A-101", type: "Flat Number" },
                       { text: "John Doe", type: "Name" },
-                      { text: "MH01AB1234", type: "Vehicle" },
+                      { text: "MH 01 AB 1234", type: "Vehicle" },
                       { text: "9876543210", type: "Phone" },
+                      { text: "B-01", type: "Car Sticker" },
                       { text: "REC-2023-001", type: "Receipt" }
                     ].map(({text, type}) => (
                       <div key={text} className="group relative">

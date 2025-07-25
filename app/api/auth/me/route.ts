@@ -17,37 +17,52 @@ export async function GET(request: NextRequest) {
     // Parse the user data from the cookie
     const user = JSON.parse(cookie.value);
     
-    // In a production app, you would:
-    // 1. Validate the session token
-    // 2. Verify the user still exists and is active
-    
-    // For this demo, we'll just verify the user exists in the sheet
+    // Verify the user exists in the sheet and is active
     const data = await fetchSheet(process.env.GOOGLE_SHEETS_MASTERDATA_RANGE || 'MasterData!A1:F100');
-    const userExists = data.some(
+    const userRow = data.find(
       (row: any[]) => 
-        row[3]?.toString().toLowerCase() === user.username.toLowerCase() && // Column D: Username
-        row[5]?.toString().toLowerCase() === 'true' // Column F: isActive
+        row[3]?.toString().toLowerCase() === user.username?.toLowerCase() // Column D: Username
     );
     
-    if (!userExists) {
+    if (!userRow || userRow[5]?.toString().toLowerCase() !== 'true') { // Column F: isActive
       // Clear the invalid session
       const response = NextResponse.json(
-        { error: 'Session expired' },
+        { error: 'Session expired or user not found' },
         { status: 401 }
       );
       
-      response.cookies.set('auth-session', '', {
+      response.cookies.set({
+        name: 'auth-session',
+        value: '',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
         expires: new Date(0),
+        domain: process.env.NODE_ENV === 'production' ? '.zold-master-view.vercel.app' : undefined
+      });
+      
+      // Also clear the client-side auth cookie
+      response.cookies.set({
+        name: 'is-authenticated',
+        value: '',
+        path: '/',
+        expires: new Date(0),
+        domain: process.env.NODE_ENV === 'production' ? '.zold-master-view.vercel.app' : undefined
       });
       
       return response;
     }
     
-    return NextResponse.json(user);
+    // Return the full user data including name and email
+    const userData = {
+      username: userRow[3],
+      name: userRow[1],
+      email: userRow[2],
+      isActive: userRow[5] === 'true'
+    };
+    
+    return NextResponse.json(userData);
     
   } catch (error) {
     console.error('Session check error:', error);

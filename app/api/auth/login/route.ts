@@ -48,22 +48,32 @@ export async function POST(request: Request) {
     const user = {
       username: userRow[3], // Column D: Username
       isActive: userRow[5] === 'true', // Column F: isActive
+      name: userRow[1], // Column B: Name
+      email: userRow[2], // Column C: Email
     };
 
     // Set a secure HTTP-only cookie for session management
     const response = NextResponse.json(user);
-    
-    // In a production app, you would:
-    // 1. Generate a secure session token
-    // 2. Store it in a secure, HTTP-only cookie
-    // 3. Store the session in a secure session store (e.g., Redis)
-    
-    // For this demo, we'll set a simple cookie that will be cleared when the browser closes
-    response.cookies.set('auth-session', JSON.stringify(user), {
+    response.cookies.set({
+      name: 'auth-session',
+      value: JSON.stringify(user),
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      domain: process.env.NODE_ENV === 'production' ? '.zold-master-view.vercel.app' : undefined
+    });
+    
+    // Also set a non-httpOnly cookie for client-side checks if needed
+    response.cookies.set({
+      name: 'is-authenticated',
+      value: 'true',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      domain: process.env.NODE_ENV === 'production' ? '.zold-master-view.vercel.app' : undefined
     });
     
     return response;

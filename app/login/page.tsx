@@ -16,7 +16,10 @@ export default function LoginPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/');
+      // Get and clear any stored redirect URL
+      const redirectUrl = sessionStorage.getItem('loginRedirect') || '/';
+      sessionStorage.removeItem('loginRedirect');
+      router.push(redirectUrl);
     }
   }, [isAuthenticated, router]);
 
@@ -34,7 +37,12 @@ export default function LoginPage() {
     try {
       const success = await login(username, password);
       if (success) {
-        router.push('/');
+        // Get the redirect URL from session storage if it exists
+        const redirectUrl = sessionStorage.getItem('loginRedirect') || '/';
+        // Clear the stored redirect URL
+        sessionStorage.removeItem('loginRedirect');
+        // Redirect to the original URL or home
+        router.push(redirectUrl);
       } else {
         setError('Invalid username or password');
       }
