@@ -4,10 +4,15 @@ import { FilterControls } from '@/components/FilterControls';
 import { OwnerTable } from '@/components/OwnerTable';
 import { ReceiptTable } from '@/components/ReceiptTable';
 import { usePropertyData } from '@/hooks/usePropertyData';
-import { Building2, Database, Search, XCircle, User, CreditCard, Car, Check } from 'lucide-react';
+import { Building2, Database, Search, XCircle, User, CreditCard, Car, Check, LogOut, Home } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
-export default function Home() {
+function Dashboard() {
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const { 
     filters, 
     filteredData, 
@@ -31,9 +36,23 @@ export default function Home() {
               </div>
             </div>
             <div className="hidden md:block">
-              <button className="px-4 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 rounded-md transition-colors">
-                Sign In
-              </button>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => router.push('/')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Home className="h-4 w-4 mr-1" />
+                </button>
+                {user && (
+                  <button
+                    onClick={logout}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    <LogOut className="h-4 w-4 mr-1" />
+                    Logout
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -57,15 +76,12 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-3 py-4 sm:px-4 sm:py-6">
         {/* Search Section */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-          <div className="p-4 sm:p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Search Records</h3>
             <FilterControls
               filters={filters}
               onFiltersChange={updateFilters}
               onReset={resetFilters}
               isLoading={isLoading}
             />
-          </div>
         </div>
 
         {/* Error State */}
@@ -111,23 +127,39 @@ export default function Home() {
                   Enter a search term to find property owners, payment records, vehicle information, and more.
                 </p>
                 
-                <div className="mt-8">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Try searching for:</h4>
-                  <div className="flex flex-wrap justify-center gap-3">
-                    {["A101", "John Doe", "MH01AB1234", "9876543210", "REC-2023-001"].map((example) => (
-                      <button
-                        key={example}
-                        type="button"
-                        onClick={() => {
-                          updateFilters({ searchTerm: example });
-                          // Set local search term to match
-                          const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
-                          if (searchInput) searchInput.value = example;
-                        }}
-                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        {example}
-                      </button>
+                <div className="mt-10 mb-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <div className="w-full border-t border-gray-200" />
+                    </div>
+                    <div className="relative flex justify-center">
+                      <span className="px-4 bg-white text-sm font-medium text-gray-500">Try searching for</span>
+                    </div>
+                  </div>
+                  <div className="mt-6 flex flex-wrap justify-center gap-3">
+                    {[
+                      { text: "A101", type: "Flat Number" },
+                      { text: "John Doe", type: "Name" },
+                      { text: "MH01AB1234", type: "Vehicle" },
+                      { text: "9876543210", type: "Phone" },
+                      { text: "REC-2023-001", type: "Receipt" }
+                    ].map(({text, type}) => (
+                      <div key={text} className="group relative">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateFilters({ searchTerm: text });
+                            const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+                            if (searchInput) searchInput.value = text;
+                          }}
+                          className="relative z-10 inline-flex items-center px-4 py-2 border border-gray-200 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-blue-50 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150"
+                        >
+                          {text}
+                        </button>
+                        <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          {type}
+                        </span>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -197,5 +229,13 @@ export default function Home() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
   );
 }

@@ -10,7 +10,7 @@ if (!isServer) {
 }
 
 // Helper function to get environment variables (server-side only)
-function getEnvVariable(key: string, fallback: string = ''): string {
+export function getEnvVariable(key: string, fallback: string = ''): string {
   // This will only run on the server where env vars are available
   const value = process.env[key] || process.env[`NEXT_PUBLIC_${key}`];
   
@@ -34,7 +34,7 @@ function getEnvVariable(key: string, fallback: string = ''): string {
 const API_KEY = getEnvVariable('GOOGLE_SHEETS_API_KEY');
 const SHEET_ID = getEnvVariable('GOOGLE_SHEETS_ID');
 const OWNERS_RANGE = getEnvVariable('GOOGLE_SHEETS_OWNERS_RANGE', 'MemberData!A1:L300');
-const MASTERDATA_RANGE = getEnvVariable('GOOGLE_SHEETS_MASTERDATA_RANGE', 'MasterData!A1:B100');
+const MASTERDATA_RANGE = getEnvVariable('GOOGLE_SHEETS_MASTERDATA_RANGE', 'MasterData!A1:F100');
 
 // Handle RECEIPTS_SHEETS which is an array
 const receiptsSheetsStr = getEnvVariable('GOOGLE_SHEETS_RECEIPTS_SHEETS', '');
@@ -46,8 +46,8 @@ const RECEIPTS_SHEETS = receiptsSheetsStr ? receiptsSheetsStr.split(',').map(s =
 //   receiptsSheets: RECEIPTS_SHEETS
 // });
 
-// Helper to fetch and parse Google Sheets data
-async function fetchSheet(range: string): Promise<any[][]> {
+// Export all necessary functions and variables
+export async function fetchSheet(range: string): Promise<any[][]> {
   try {
     // console.log("Fetching sheet with range:", range);
     // console.log("Using Sheet ID:", SHEET_ID ? '***' + SHEET_ID.slice(-4) : 'MISSING');
@@ -153,3 +153,12 @@ export async function fetchReceipts(): Promise<Receipt[]> {
     pdfName: row[13],
   }));
 }
+
+// Export config object with all necessary variables
+export const config = {
+  API_KEY,
+  SHEET_ID,
+  OWNERS_RANGE,
+  MASTERDATA_RANGE,
+  RECEIPTS_SHEETS
+};
