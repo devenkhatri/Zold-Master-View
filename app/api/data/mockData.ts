@@ -3,7 +3,7 @@ import { Owner, Receipt } from '@/types/property';
 export const mockOwners: Owner[] = [
   {
     id: '1',
-    isOwner: true,
+    isOwner: 'Owner',
     mobile1: '9825499224',
     memberName: 'Vijaybhai Munshi',
     mobile2: '9106333410',
@@ -15,7 +15,7 @@ export const mockOwners: Owner[] = [
   },
   {
     id: '2',
-    isOwner: true,
+    isOwner: 'Owner',
     mobile1: '9876543210',
     memberName: 'Rajesh Kumar',
     mobile2: '9123456789',
@@ -27,7 +27,7 @@ export const mockOwners: Owner[] = [
   },
   {
     id: '3',
-    isOwner: false,
+    isOwner: 'Non-Owner',
     mobile1: '9988776655',
     memberName: 'Priya Sharma',
     mobile2: '9234567890',
