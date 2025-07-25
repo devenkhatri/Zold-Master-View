@@ -237,7 +237,7 @@ function Dashboard() {
               &copy; {new Date().getFullYear()} Zold Master View. All rights reserved.
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
-              <a href="https://www.devengoratela.com" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-gray-700">Created by Deven Goratela</a>
+              <a href="https://www.devengoratela.com" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-gray-700">Made with ❤️ by Zold IT Team</a>
             </div>
           </div>
         </div>

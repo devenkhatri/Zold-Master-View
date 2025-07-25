@@ -65,7 +65,12 @@
 3. Set up environment variables:
    Create a `.env.local` file in the root directory and add the following:
    ```env
-   NEXT_PUBLIC_API_URL=your_api_url_here
+   USE_MOCK_DATA=true
+   GOOGLE_SHEETS_API_KEY=your_google_api_key_here
+   GOOGLE_SHEETS_ID=your_sheet_id_here
+   GOOGLE_SHEETS_OWNERS_RANGE=MemberData!A1:L300
+   GOOGLE_SHEETS_RECEIPTS_SHEETS=Sheet1,Sheet2,Sheet3 # Comma-separated list of all receipts sheets
+   GOOGLE_SHEETS_MASTERDATA_RANGE=MasterData!A1:B100
    # Add other environment variables as needed
    ```
 
@@ -95,7 +100,7 @@ pnpm start
 
 ## 🔧 Configuration
 
-The application can be configured using environment variables. See `.env.example` for available options.
+The application can be configured using environment variables. See `.env.local.example` for available options.
 
 ## 🤝 Contributing
 
