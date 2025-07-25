@@ -41,13 +41,12 @@ export default function Home() {
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="max-w-7xl mx-auto px-3 py-4 sm:px-4">
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-              <span className="block">Zold Master View</span>
-              <span className="block text-blue-600 mt-2">Property & Payment Management</span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+              <span className="text-blue-600">Zold Members & Payment Data Visualization</span>
             </h2>
-            <p className="mt-4 max-w-2xl text-xl text-gray-600 mx-auto">
+            <p className="mt-2 sm:mt-3 text-base sm:text-lg text-gray-600 mx-auto max-w-2xl">
               Quickly find property owners, payment records, and more with our powerful search system
             </p>
           </div>
@@ -55,10 +54,10 @@ export default function Home() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 py-4 sm:px-4 sm:py-6">
         {/* Search Section */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 mb-8">
-          <div className="p-6">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+          <div className="p-4 sm:p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Search Records</h3>
             <FilterControls
               filters={filters}
@@ -192,7 +191,7 @@ export default function Home() {
               &copy; {new Date().getFullYear()} Zold Master View. All rights reserved.
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
-              <a href="https://www.devengoratela.com" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-700">Created by Deven Goratela</a>
+              <a href="https://www.devengoratela.com" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-gray-700">Created by Deven Goratela</a>
             </div>
           </div>
         </div>
