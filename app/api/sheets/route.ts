@@ -15,7 +15,7 @@ class SheetsApiError extends Error {
 export async function GET() {
   try {
     // Log environment variable status (without exposing sensitive data)
-    console.log('Sheets API endpoint called');
+    // console.log('Sheets API endpoint called');
     
     // These will now run on the server where env vars are available
     const [owners, receipts, masterData] = await Promise.all([

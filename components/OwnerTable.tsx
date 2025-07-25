@@ -54,8 +54,6 @@ export const OwnerTable = ({ owners, isLoading }: OwnerTableProps) => {
     );
   }
 
-  console.log("**** owners", owners)
-
   return (
     <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
       <div className="px-6 py-4 bg-slate-50 border-b">
@@ -66,69 +64,81 @@ export const OwnerTable = ({ owners, isLoading }: OwnerTableProps) => {
       </div>
       
       {/* Desktop Table View */}
-      <div className="hidden lg:block overflow-x-auto">
-        <table className="w-full min-w-[800px]">
-          <thead className="bg-blue-500 text-white">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Owner?</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Member Name</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Mobile1</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Mobile2</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Cars</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Bikes</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Sticker Nos</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {owners.map((owner, index) => (
-              <tr 
-                key={owner.id+index} 
-                className={`hover:bg-slate-50 transition-colors ${
-                  index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
-                }`}
-              >
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-center">
-                    <span className={`h-4 w-4 ${owner.isOwner.toLowerCase() === 'owner' ? 'text-green-600' : 'text-red-600'}`}>{owner.isOwner}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="text-sm font-medium text-slate-900">{owner.memberName}</span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm text-slate-900">{owner.mobile1}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm text-slate-900">{owner.mobile2}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Car className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm text-slate-900">{owner.cars}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Bike className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm text-slate-900">{owner.bikes}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm font-mono text-slate-900">{owner.stickerNos}</span>
-                  </div>
-                </td>
+      <div className="hidden lg:block">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-blue-500 text-white">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Block+Flat</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Member Name</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Mobile1</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Mobile2</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Cars</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Bikes</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Sticker Nos</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {owners.map((owner, index) => (
+                <tr 
+                  key={owner.id+index} 
+                  className={`hover:bg-slate-50 transition-colors ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                  }`}
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        owner.isOwner.toLowerCase() === 'owner' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {owner.isOwner}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm font-medium text-slate-900">{owner.blockFlatNumber}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm font-medium text-slate-900">{owner.memberName}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm text-slate-900">{owner.mobile1}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm text-slate-900">{owner.mobile2}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm text-slate-900">{owner.cars}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Bike className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm text-slate-900">{owner.bikes}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm font-mono text-slate-900">{owner.stickerNos}</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Mobile Card View */}
@@ -139,13 +149,21 @@ export const OwnerTable = ({ owners, isLoading }: OwnerTableProps) => {
               className="flex items-center justify-between cursor-pointer"
               onClick={() => toggleRow(owner.id)}
             >
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100">
-                <span className={`h-4 w-4 ${owner.isOwner.toLowerCase() === 'owner' ? 'text-green-600' : 'text-red-600'}`}>{owner.isOwner}</span>
-                </div>
-                <div>
-                  <h4 className="font-medium text-slate-900">{owner.memberName}</h4>
-                  <p className="text-sm text-slate-500">Block {owner.blockNumber}, Flat {owner.flatNumber}</p>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      owner.isOwner.toLowerCase() === 'owner' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {owner.isOwner}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-slate-900">{owner.memberName}</h4>
+                    <p className="text-sm text-slate-500">{owner.blockFlatNumber} • Block {owner.blockNumber}, Flat {owner.flatNumber}</p>
+                  </div>
                 </div>
               </div>
               <ChevronRight 

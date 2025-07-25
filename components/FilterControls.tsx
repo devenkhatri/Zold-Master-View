@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Filter } from 'lucide-react';
+import { RefreshCw, Search } from 'lucide-react';
 import { FilterOptions } from '@/types/property';
 
 interface FilterControlsProps {
@@ -19,151 +18,76 @@ export const FilterControls = ({
   onReset, 
   isLoading 
 }: FilterControlsProps) => {
-  const [flatOptions, setFlatOptions] = useState<string[]>([]);
-  const [blockOptions, setBlockOptions] = useState<string[]>([]);
-  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
-  // Load block options on component mount
-  useEffect(() => {
-    let isMounted = true;
-    const loadBlockOptions = async () => {
-      try {
-        setIsLoadingOptions(true);
-        const response = await fetch('/api/sheets');
-        if (!response.ok) throw new Error('Failed to load options');
-        const { data } = await response.json();
-        if (isMounted && data?.blockOptions) {
-          setBlockOptions(data.blockOptions);
-        }
-      } catch (error) {
-        console.error('Error loading block options:', error);
-      } finally {
-        if (isMounted) setIsLoadingOptions(false);
-      }
-    };
-    
-    loadBlockOptions();
-    return () => { isMounted = false; };
-  }, []);
 
-  // Load flat options when block number changes
-  useEffect(() => {
-    let isMounted = true;
-    const loadFlatOptions = async () => {
-      if (!filters.blockNumber) {
-        setFlatOptions([]);
-        return;
-      }
-      
-      try {
-        setIsLoadingOptions(true);
-        const response = await fetch('/api/sheets');
-        if (!response.ok) throw new Error('Failed to load options');
-        const { data } = await response.json();
-        
-        if (isMounted && data?.getFlatOptions) {
-          const options = await data.getFlatOptions(filters.blockNumber);
-          setFlatOptions(options || []);
-        }
-      } catch (error) {
-        console.error('Error loading flat options:', error);
-      } finally {
-        if (isMounted) setIsLoadingOptions(false);
-      }
-    };
-    
-    loadFlatOptions();
-    return () => { isMounted = false; };
-  }, [filters.blockNumber]);
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
 
-  const handleBlockChange = (value: string) => {
-    onFiltersChange({ 
-      blockNumber: value,
-      flatNumber: '' // Reset flat number when block changes
-    });
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearchTerm(e.target.value);
   };
 
-  const handleFlatChange = (value: string) => {
-    onFiltersChange({ flatNumber: value });
+  const handleSearch = () => {
+    onFiltersChange({ searchTerm: localSearchTerm });
   };
 
+  const handleClearSearch = () => {
+    setLocalSearchTerm('');
+    onFiltersChange({ searchTerm: '' });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Filter className="h-5 w-5 text-slate-600" />
-        <h2 className="text-lg font-semibold text-slate-800">Filter Controls</h2>
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold text-slate-800">Search</h2>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">
-            Enter Block Number:
-          </label>
-          <Select 
-            value={filters.blockNumber} 
-            onValueChange={handleBlockChange}
-            disabled={isLoading || isLoadingOptions}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Block" />
-            </SelectTrigger>
-            <SelectContent>
-              {blockOptions.map((block) => (
-                <SelectItem key={block} value={block}>
-                  Block {block}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="flex">
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-l-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="Search owners and payments..."
+              value={localSearchTerm}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+            />
+            <button
+              type="button"
+              onClick={handleSearch}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Search className="h-4 w-4 mr-1" />
+              Search
+            </button>
+            {filters.searchTerm && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="ml-2 inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <span className="sr-only">Clear search</span>
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
         </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">
-            Enter Flat Number:
-          </label>
-          <Select 
-            value={filters.flatNumber} 
-            onValueChange={handleFlatChange}
-            disabled={!filters.blockNumber || isLoading || isLoadingOptions}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Flat" />
-            </SelectTrigger>
-            <SelectContent>
-              {flatOptions.map((flat) => (
-                <SelectItem key={flat} value={flat}>
-                  Flat {flat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-          <label className="text-sm font-medium text-slate-700 opacity-0">
-            Actions
-          </label>
-          <Button 
-            variant="outline" 
-            onClick={onReset}
-            disabled={isLoading}
-            className="w-full"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Reset Filters
-          </Button>
-        </div>
-
-        {(filters.blockNumber || filters.flatNumber) && (
-          <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-            <label className="text-sm font-medium text-slate-700 opacity-0">
-              Status
-            </label>
-            <div className="flex items-center h-10 px-3 py-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
-              Filters Active
-            </div>
+      </div>
+      
+      <div className="flex justify-between items-center">        
+        {filters.searchTerm && (
+          <div className="flex items-center h-10 px-3 py-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
+            Search Active
           </div>
         )}
       </div>

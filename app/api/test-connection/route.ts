@@ -13,7 +13,7 @@ export async function GET() {
     
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(testRange)}?key=${apiKey}`;
     
-    console.log('Testing connection to:', url.replace(apiKey, '***'));
+    // console.log('Testing connection to:', url.replace(apiKey, '***'));
     
     const response = await fetch(url);
     const data = await response.json();

@@ -5,8 +5,7 @@ import { Owner, Receipt, FilterOptions } from '@/types/property';
 
 export const usePropertyData = () => {
   const [filters, setFilters] = useState<FilterOptions>({
-    blockNumber: '',
-    flatNumber: '',
+    searchTerm: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,17 +39,24 @@ export const usePropertyData = () => {
   }, []);
 
   const filteredData = useMemo(() => {
-    const filteredOwners = owners.filter(owner => {
-      const blockMatch = !filters.blockNumber || owner.blockNumber === filters.blockNumber;
-      const flatMatch = !filters.flatNumber || owner.flatNumber === filters.flatNumber;
-      return blockMatch && flatMatch;
-    });
+    const searchTerm = (filters.searchTerm || '').toLowerCase().trim();
+    
+    // Return empty arrays if no search term is provided
+    if (!searchTerm) {
+      return { owners: [], receipts: [] };
+    }
+    
+    const filteredOwners = owners.filter(owner => 
+      Object.values(owner).some(value => 
+        String(value).toLowerCase().includes(searchTerm)
+      )
+    );
 
-    const filteredReceipts = receipts.filter(receipt => {
-      const blockMatch = !filters.blockNumber || receipt.blockNumber === filters.blockNumber;
-      const flatMatch = !filters.flatNumber || receipt.flatNumber === filters.flatNumber;
-      return blockMatch && flatMatch;
-    });
+    const filteredReceipts = receipts.filter(receipt => 
+      Object.values(receipt).some(value => 
+        String(value).toLowerCase().includes(searchTerm)
+      )
+    );
 
     return { owners: filteredOwners, receipts: filteredReceipts };
   }, [filters, owners, receipts]);
@@ -59,15 +65,20 @@ export const usePropertyData = () => {
     setIsLoading(true);
     setError(null);
     
+    // Update filters immediately
+    setFilters(prev => {
+      const updatedFilters = { ...prev, ...newFilters };
+      return updatedFilters;
+    });
+    
     // Simulate API delay
     setTimeout(() => {
-      setFilters(prev => ({ ...prev, ...newFilters }));
       setIsLoading(false);
     }, 300);
   };
 
   const resetFilters = () => {
-    setFilters({ blockNumber: '', flatNumber: '' });
+    setFilters({ searchTerm: '' });
   };
 
   return {

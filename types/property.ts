@@ -9,6 +9,7 @@ export interface Owner {
   stickerNos: string;
   blockNumber: string;
   flatNumber: string;
+  blockFlatNumber: string;
 }
 
 export interface Receipt {
@@ -24,8 +25,7 @@ export interface Receipt {
 }
 
 export interface FilterOptions {
-  blockNumber: string;
-  flatNumber: string;
+  searchTerm: string;
 }
 
 export interface PropertyData {

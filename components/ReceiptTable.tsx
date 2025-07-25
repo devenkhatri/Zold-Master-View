@@ -98,7 +98,7 @@ export const ReceiptTable = ({ receipts, isLoading }: ReceiptTableProps) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {receipts.map((receipt, index) => (
+            {receipts.map((receipt: Receipt, index: number) => (
               <tr 
                 key={receipt.id} 
                 className={`hover:bg-slate-50 transition-colors ${
@@ -145,7 +145,7 @@ export const ReceiptTable = ({ receipts, isLoading }: ReceiptTableProps) => {
 
       {/* Mobile Card View */}
       <div className="lg:hidden divide-y divide-gray-200">
-        {receipts.map((receipt, index) => (
+        {receipts.map((receipt: Receipt, index: number) => (
           <div key={receipt.id} className="p-4">
             <div 
               className="flex items-center justify-between cursor-pointer"

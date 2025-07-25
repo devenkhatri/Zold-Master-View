@@ -10,7 +10,7 @@ export async function GET() {
     'NEXT_PUBLIC_GOOGLE_SHEETS_ID': process.env.NEXT_PUBLIC_GOOGLE_SHEETS_ID ? '***' + process.env.NEXT_PUBLIC_GOOGLE_SHEETS_ID.slice(-4) : 'Not set',
   };
 
-  console.log('Environment variables on server:', JSON.stringify(envVars, null, 2));
+  // console.log('Environment variables on server:', JSON.stringify(envVars, null, 2));
 
   return NextResponse.json({
     message: 'Environment variables check',

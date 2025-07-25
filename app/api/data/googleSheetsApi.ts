@@ -2,7 +2,7 @@ import { Owner, Receipt } from '@/types/property';
 
 // Debug: Check if running on server
 const isServer = typeof window === 'undefined';
-console.log('[googleSheetsApi] Running in environment:', isServer ? 'Server' : 'Client');
+// console.log('[googleSheetsApi] Running in environment:', isServer ? 'Server' : 'Client');
 
 // This file should only be used on the server side
 if (!isServer) {
@@ -22,13 +22,13 @@ function getEnvVariable(key: string, fallback: string = ''): string {
 }
 
 // Log environment variable status (without sensitive data)
-console.log('[googleSheetsApi] Environment variables status:', {
-  hasApiKey: !!process.env.GOOGLE_SHEETS_API_KEY,
-  hasSheetId: !!process.env.GOOGLE_SHEETS_ID,
-  ownersRange: process.env.GOOGLE_SHEETS_OWNERS_RANGE || 'Using default',
-  masterDataRange: process.env.GOOGLE_SHEETS_MASTERDATA_RANGE || 'Using default',
-  hasReceiptsSheets: !!process.env.GOOGLE_SHEETS_RECEIPTS_SHEETS
-});
+// console.log('[googleSheetsApi] Environment variables status:', {
+//   hasApiKey: !!process.env.GOOGLE_SHEETS_API_KEY,
+//   hasSheetId: !!process.env.GOOGLE_SHEETS_ID,
+//   ownersRange: process.env.GOOGLE_SHEETS_OWNERS_RANGE || 'Using default',
+//   masterDataRange: process.env.GOOGLE_SHEETS_MASTERDATA_RANGE || 'Using default',
+//   hasReceiptsSheets: !!process.env.GOOGLE_SHEETS_RECEIPTS_SHEETS
+// });
 
 // Get environment variables with fallbacks
 const API_KEY = getEnvVariable('GOOGLE_SHEETS_API_KEY');
@@ -40,24 +40,24 @@ const MASTERDATA_RANGE = getEnvVariable('GOOGLE_SHEETS_MASTERDATA_RANGE', 'Maste
 const receiptsSheetsStr = getEnvVariable('GOOGLE_SHEETS_RECEIPTS_SHEETS', '');
 const RECEIPTS_SHEETS = receiptsSheetsStr ? receiptsSheetsStr.split(',').map(s => s.trim()) : [];
 
-console.log('[googleSheetsApi] Configured with:', {
-  ownersRange: OWNERS_RANGE,
-  masterDataRange: MASTERDATA_RANGE,
-  receiptsSheets: RECEIPTS_SHEETS
-});
+// console.log('[googleSheetsApi] Configured with:', {
+//   ownersRange: OWNERS_RANGE,
+//   masterDataRange: MASTERDATA_RANGE,
+//   receiptsSheets: RECEIPTS_SHEETS
+// });
 
 // Helper to fetch and parse Google Sheets data
 async function fetchSheet(range: string): Promise<any[][]> {
   try {
-    console.log("Fetching sheet with range:", range);
-    console.log("Using Sheet ID:", SHEET_ID ? '***' + SHEET_ID.slice(-4) : 'MISSING');
+    // console.log("Fetching sheet with range:", range);
+    // console.log("Using Sheet ID:", SHEET_ID ? '***' + SHEET_ID.slice(-4) : 'MISSING');
     
     if (!API_KEY) throw new Error('Google Sheets API key not set');
     if (!SHEET_ID) throw new Error('Google Sheet ID not set');
     if (!range) throw new Error('Sheet range not specified');
     
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?key=${API_KEY}`;
-    console.log("Request URL:", url.replace(API_KEY, '***'));
+    // console.log("Request URL:", url.replace(API_KEY, '***'));
     
     const res = await fetch(url);
     const responseText = await res.text();
@@ -99,6 +99,7 @@ export async function fetchOwners(): Promise<Owner[]> {
     stickerNos: row[11],
     blockNumber: row[0],
     flatNumber: row[1],
+    blockFlatNumber: row[12],
   })) as Owner[];
 }
 

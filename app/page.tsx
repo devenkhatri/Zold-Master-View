@@ -4,7 +4,7 @@ import { FilterControls } from '@/components/FilterControls';
 import { OwnerTable } from '@/components/OwnerTable';
 import { ReceiptTable } from '@/components/ReceiptTable';
 import { usePropertyData } from '@/hooks/usePropertyData';
-import { Building2, Database } from 'lucide-react';
+import { Building2, Database, Search } from 'lucide-react';
 
 export default function Home() {
   const { 
@@ -49,20 +49,12 @@ export default function Home() {
         )}
 
         {/* Results Summary */}
-        {(filters.blockNumber || filters.flatNumber) && (
+        {filters.searchTerm && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="flex items-center gap-2">
               <Database className="h-5 w-5 text-blue-600" />
-              <div className="text-sm text-blue-800 flex-1">
-                <span className="font-medium">Results:</span> {filteredData.owners.length} owner record(s), {filteredData.receipts.length} payment record(s)
-                <div className="mt-1 sm:mt-0 sm:inline">
-                  {filters.blockNumber && (
-                    <span className="block sm:inline sm:ml-2">• Block: <span className="font-semibold">{filters.blockNumber}</span></span>
-                  )}
-                  {filters.flatNumber && (
-                    <span className="block sm:inline sm:ml-2">• Flat: <span className="font-semibold">{filters.flatNumber}</span></span>
-                  )}
-                </div>
+              <div className="text-sm text-blue-800">
+                <span className="font-medium">Search Results:</span> {filteredData.owners.length} owner record(s), {filteredData.receipts.length} payment record(s)
               </div>
             </div>
           </div>
@@ -70,8 +62,16 @@ export default function Home() {
 
         {/* Data Tables */}
         <div className="space-y-6 sm:space-y-8">
-          <OwnerTable owners={filteredData.owners} isLoading={isLoading} />
-          <ReceiptTable receipts={filteredData.receipts} isLoading={isLoading} />
+          {!filters.searchTerm ? (
+            <div className="text-center py-12 text-slate-500">
+              <p>Enter a search term to see results</p>
+            </div>
+          ) : (
+            <>
+              <OwnerTable owners={filteredData.owners} isLoading={isLoading} />
+              <ReceiptTable receipts={filteredData.receipts} isLoading={isLoading} />
+            </>
+          )}
         </div>
 
         {/* Footer */}
