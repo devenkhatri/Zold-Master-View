@@ -1,6 +1,6 @@
 export interface Owner {
   id: string;
-  isOwner: boolean;
+  isOwner: string;
   mobile1: string;
   memberName: string;
   mobile2: string;

@@ -108,7 +108,7 @@ export const mockReceipts: Receipt[] = [
   },
 ];
 
-export const blockOptions = ['A', 'B', 'C', 'D'];
+export const blockOptions = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
 export const getFlatOptions = (blockNumber: string): string[] => {
   const flatsInBlock = mockOwners

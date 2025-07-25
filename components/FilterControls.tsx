@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Filter } from 'lucide-react';
 import { FilterOptions } from '@/types/property';
-import { blockOptions, getFlatOptions } from '@/data/mockData';
 
 interface FilterControlsProps {
   filters: FilterOptions;
@@ -21,13 +20,60 @@ export const FilterControls = ({
   isLoading 
 }: FilterControlsProps) => {
   const [flatOptions, setFlatOptions] = useState<string[]>([]);
+  const [blockOptions, setBlockOptions] = useState<string[]>([]);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
+  // Load block options on component mount
   useEffect(() => {
-    if (filters.blockNumber) {
-      setFlatOptions(getFlatOptions(filters.blockNumber));
-    } else {
-      setFlatOptions([]);
-    }
+    let isMounted = true;
+    const loadBlockOptions = async () => {
+      try {
+        setIsLoadingOptions(true);
+        const response = await fetch('/api/sheets');
+        if (!response.ok) throw new Error('Failed to load options');
+        const { data } = await response.json();
+        if (isMounted && data?.blockOptions) {
+          setBlockOptions(data.blockOptions);
+        }
+      } catch (error) {
+        console.error('Error loading block options:', error);
+      } finally {
+        if (isMounted) setIsLoadingOptions(false);
+      }
+    };
+    
+    loadBlockOptions();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Load flat options when block number changes
+  useEffect(() => {
+    let isMounted = true;
+    const loadFlatOptions = async () => {
+      if (!filters.blockNumber) {
+        setFlatOptions([]);
+        return;
+      }
+      
+      try {
+        setIsLoadingOptions(true);
+        const response = await fetch('/api/sheets');
+        if (!response.ok) throw new Error('Failed to load options');
+        const { data } = await response.json();
+        
+        if (isMounted && data?.getFlatOptions) {
+          const options = await data.getFlatOptions(filters.blockNumber);
+          setFlatOptions(options || []);
+        }
+      } catch (error) {
+        console.error('Error loading flat options:', error);
+      } finally {
+        if (isMounted) setIsLoadingOptions(false);
+      }
+    };
+    
+    loadFlatOptions();
+    return () => { isMounted = false; };
   }, [filters.blockNumber]);
 
   const handleBlockChange = (value: string) => {
@@ -40,6 +86,8 @@ export const FilterControls = ({
   const handleFlatChange = (value: string) => {
     onFiltersChange({ flatNumber: value });
   };
+
+
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
@@ -56,7 +104,7 @@ export const FilterControls = ({
           <Select 
             value={filters.blockNumber} 
             onValueChange={handleBlockChange}
-            disabled={isLoading}
+            disabled={isLoading || isLoadingOptions}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Block" />
@@ -78,7 +126,7 @@ export const FilterControls = ({
           <Select 
             value={filters.flatNumber} 
             onValueChange={handleFlatChange}
-            disabled={isLoading || !filters.blockNumber}
+            disabled={!filters.blockNumber || isLoading || isLoadingOptions}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Flat" />

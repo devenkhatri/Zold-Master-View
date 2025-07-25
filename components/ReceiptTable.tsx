@@ -2,7 +2,7 @@
 
 import { Receipt } from '@/types/property';
 import { Receipt as ReceiptIcon, Calendar, IndianRupee, FileText, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
+
 import { useState } from 'react';
 
 interface ReceiptTableProps {
@@ -25,7 +25,10 @@ export const ReceiptTable = ({ receipts, isLoading }: ReceiptTableProps) => {
 
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'yyyy-MM-dd');
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return dateString;
+      // Format as yyyy-MM-dd (ISO style)
+      return d.toLocaleDateString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit' });
     } catch {
       return dateString;
     }

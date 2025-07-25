@@ -54,6 +54,8 @@ export const OwnerTable = ({ owners, isLoading }: OwnerTableProps) => {
     );
   }
 
+  console.log("**** owners", owners)
+
   return (
     <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
       <div className="px-6 py-4 bg-slate-50 border-b">
@@ -69,8 +71,8 @@ export const OwnerTable = ({ owners, isLoading }: OwnerTableProps) => {
           <thead className="bg-blue-500 text-white">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-semibold">Owner?</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Mobile1</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Member Name</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Mobile1</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Mobile2</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Cars</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Bikes</th>
@@ -80,28 +82,24 @@ export const OwnerTable = ({ owners, isLoading }: OwnerTableProps) => {
           <tbody className="divide-y divide-gray-200">
             {owners.map((owner, index) => (
               <tr 
-                key={owner.id} 
+                key={owner.id+index} 
                 className={`hover:bg-slate-50 transition-colors ${
                   index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
                 }`}
               >
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-center">
-                    {owner.isOwner ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <X className="h-4 w-4 text-red-600" />
-                    )}
+                    <span className={`h-4 w-4 ${owner.isOwner.toLowerCase() === 'owner' ? 'text-green-600' : 'text-red-600'}`}>{owner.isOwner}</span>
                   </div>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="text-sm font-medium text-slate-900">{owner.memberName}</span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-slate-400" />
                     <span className="text-sm text-slate-900">{owner.mobile1}</span>
                   </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="text-sm font-medium text-slate-900">{owner.memberName}</span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -143,11 +141,7 @@ export const OwnerTable = ({ owners, isLoading }: OwnerTableProps) => {
             >
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100">
-                  {owner.isOwner ? (
-                    <Check className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <X className="h-4 w-4 text-red-600" />
-                  )}
+                <span className={`h-4 w-4 ${owner.isOwner.toLowerCase() === 'owner' ? 'text-green-600' : 'text-red-600'}`}>{owner.isOwner}</span>
                 </div>
                 <div>
                   <h4 className="font-medium text-slate-900">{owner.memberName}</h4>
