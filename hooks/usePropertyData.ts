@@ -12,6 +12,7 @@ export const usePropertyData = () => {
 
   const [owners, setOwners] = useState<Owner[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -26,6 +27,7 @@ export const usePropertyData = () => {
         if (isMounted && data) {
           setOwners(data.owners || []);
           setReceipts(data.receipts || []);
+          setLastUpdated(data.lastUpdated || null);
           setIsLoading(false);
         }
       })
@@ -41,9 +43,9 @@ export const usePropertyData = () => {
   const filteredData = useMemo(() => {
     const searchTerm = (filters.searchTerm || '').toLowerCase().trim();
     
-    // Return empty arrays if no search term is provided
+    // Return empty arrays if no search term is provided, but keep the lastUpdated date
     if (!searchTerm) {
-      return { owners: [], receipts: [] };
+      return { owners: [], receipts: [], lastUpdated };
     }
     
     const filteredOwners = owners.filter(owner => 
@@ -58,7 +60,11 @@ export const usePropertyData = () => {
       )
     );
 
-    return { owners: filteredOwners, receipts: filteredReceipts };
+    return { 
+      owners: filteredOwners, 
+      receipts: filteredReceipts,
+      lastUpdated
+    };
   }, [filters, owners, receipts]);
 
   const updateFilters = (newFilters: Partial<FilterOptions>) => {

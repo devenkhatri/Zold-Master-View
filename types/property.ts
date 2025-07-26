@@ -31,4 +31,7 @@ export interface FilterOptions {
 export interface PropertyData {
   owners: Owner[];
   receipts: Receipt[];
+  lastUpdated?: string | null;
+  blockOptions?: string[];
+  getFlatOptions?: (blockNumber: string) => string[];
 }

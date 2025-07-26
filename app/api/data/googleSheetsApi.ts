@@ -109,6 +109,17 @@ export async function fetchMasterData() {
   const [header, ...dataRows] = rows;
   const blockSet = new Set<string>();
   const blockToFlats: Record<string, Set<string>> = {};
+  let lastUpdated = '';
+  
+  // Find the last row with a date in column C (index 2)
+  for (let i = dataRows.length - 1; i >= 0; i--) {
+    const row = dataRows[i];
+    if (row && row[2]) {
+      lastUpdated = row[2];
+      break;
+    }
+  }
+
   for (const row of dataRows) {
     const block = row[0];
     const flat = row[1];
@@ -118,11 +129,17 @@ export async function fetchMasterData() {
       if (flat) blockToFlats[block].add(flat);
     }
   }
+  
   const blockOptions = Array.from(blockSet).sort();
   const getFlatOptions = (blockNumber: string): string[] => {
     return blockToFlats[blockNumber] ? Array.from(blockToFlats[blockNumber]).sort() : [];
   };
-  return { blockOptions, getFlatOptions };
+  
+  return { 
+    blockOptions, 
+    getFlatOptions, 
+    lastUpdated: lastUpdated || null 
+  };
 }
 
 export async function fetchReceipts(): Promise<Receipt[]> {

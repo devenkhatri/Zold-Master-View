@@ -123,5 +123,5 @@ For any questions or support, please contact the development team.
 ---
 
 <div align="center">
-  Made with ❤️ by Zold Team
+  Made with ❤️ by Zold IT Team
 </div>
