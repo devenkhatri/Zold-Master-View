@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { MatrixNavigation } from '@/components/matrix/MatrixNavigation';
 import { Navigation } from '@/components/Navigation';
 import { AmcMatrix } from '@/components/matrix/AmcMatrix';
+import { MatrixErrorBoundary } from '@/components/matrix/MatrixErrorBoundary';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { BarChart3 } from 'lucide-react';
 
@@ -47,11 +48,19 @@ function AmcMatrixPage() {
         {/* Navigation Component */}
         <MatrixNavigation className="mb-4 sm:mb-6" />
 
-        {/* AMC Matrix Component - Using enhanced API */}
-        <AmcMatrix
-          useEnhancedApi={true}
-          onCellClick={handleCellClick}
-        />
+        {/* AMC Matrix Component - Using enhanced API with error boundary */}
+        <MatrixErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('AMC Matrix Page Error:', error, errorInfo);
+            // Could send to monitoring service here
+          }}
+          maxRetries={2}
+        >
+          <AmcMatrix
+            useEnhancedApi={true}
+            onCellClick={handleCellClick}
+          />
+        </MatrixErrorBoundary>
       </div>
     </div>
   );

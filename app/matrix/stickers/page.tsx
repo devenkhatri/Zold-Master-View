@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { MatrixNavigation } from '@/components/matrix/MatrixNavigation';
 import { Navigation } from '@/components/Navigation';
 import { StickerMatrix } from '@/components/matrix/StickerMatrix';
+import { MatrixErrorBoundary } from '@/components/matrix/MatrixErrorBoundary';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useStickerData } from '@/hooks/useStickerData';
 import { Car } from 'lucide-react';
@@ -16,7 +17,11 @@ function StickerMatrixPage() {
     error,
     summary,
     validationErrors,
-    refetch 
+    loadingStage,
+    canRetry,
+    retryCount,
+    refetch,
+    retry
   } = useStickerData();
 
   useEffect(() => {
@@ -56,6 +61,14 @@ function StickerMatrixPage() {
     }
   };
 
+  const handleRetry = async () => {
+    try {
+      await retry();
+    } catch (err) {
+      console.error('Error retrying sticker data:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header - Enhanced responsive design */}
@@ -81,13 +94,21 @@ function StickerMatrixPage() {
         {/* Navigation Component */}
         <MatrixNavigation className="mb-4 sm:mb-6" />
 
-        {/* Sticker Matrix Component */}
-        <StickerMatrix
-          owners={owners}
-          isLoading={isLoading}
-          hasError={hasError}
-          onCellClick={handleCellClick}
-        />
+        {/* Sticker Matrix Component with error boundary */}
+        <MatrixErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('Sticker Matrix Page Error:', error, errorInfo);
+            // Could send to monitoring service here
+          }}
+          maxRetries={2}
+        >
+          <StickerMatrix
+            owners={owners}
+            isLoading={isLoading}
+            hasError={hasError}
+            onCellClick={handleCellClick}
+          />
+        </MatrixErrorBoundary>
 
         {/* Debug information in development */}
         {process.env.NODE_ENV === 'development' && summary && (
@@ -97,12 +118,26 @@ function StickerMatrixPage() {
             <p>Total Flats: {summary.totalFlats}</p>
             <p>Assignment Rate: {summary.assignmentRate}%</p>
             <p>Validation Errors: {validationErrors.length}</p>
-            <button 
-              onClick={handleRefresh}
-              className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-xs"
-            >
-              Force Refresh
-            </button>
+            <p>Loading Stage: {loadingStage}</p>
+            <p>Retry Count: {retryCount}/3</p>
+            <div className="mt-2 space-x-2">
+              <button 
+                onClick={handleRefresh}
+                className="px-3 py-1 bg-blue-500 text-white rounded text-xs"
+                disabled={isLoading}
+              >
+                Force Refresh
+              </button>
+              {canRetry && (
+                <button 
+                  onClick={handleRetry}
+                  className="px-3 py-1 bg-orange-500 text-white rounded text-xs"
+                  disabled={isLoading}
+                >
+                  Retry ({3 - retryCount} left)
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

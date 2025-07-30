@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Calculator, Grid3X3, RefreshCw, AlertTriangle } from 'lucide-react';
+import { MatrixErrorBoundary } from './MatrixErrorBoundary';
+import { MatrixLoadingState } from './MatrixLoadingState';
+import { useMatrixErrorHandling } from '@/hooks/useMatrixErrorHandling';
 
 export interface AmcMatrixProps {
   owners?: Owner[];
@@ -32,6 +35,9 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
   className,
   useEnhancedApi = true // Default to using the enhanced API
 }) => {
+  // Use error handling hook
+  const errorHandler = useMatrixErrorHandling();
+  
   // Use the enhanced AMC API if enabled, otherwise fall back to props
   const amcApiData = useAmcData();
   
@@ -43,6 +49,16 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
   const fromCache = useEnhancedApi ? amcApiData.fromCache : false;
   const validationErrors = useEnhancedApi ? amcApiData.validationErrors : [];
   const summary = useEnhancedApi ? amcApiData.summary : null;
+  const loadingStage = useEnhancedApi ? amcApiData.loadingStage : 'complete';
+  const canRetry = useEnhancedApi ? amcApiData.canRetry : false;
+  const retryCount = useEnhancedApi ? amcApiData.retryCount : 0;
+  
+  // Handle API errors
+  React.useEffect(() => {
+    if (apiError && useEnhancedApi) {
+      errorHandler.handleApiError(apiError, 'AMC Data Loading');
+    }
+  }, [apiError, useEnhancedApi, errorHandler]);
   
   const { availableYears, processAmcDataForYear } = useMatrixData(owners, receipts);
   
@@ -58,7 +74,7 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
     }
   }, [availableYears, selectedYear]);
 
-  // Process AMC data for the selected year
+  // Process AMC data for the selected year with error handling
   const amcData: AmcMatrixData = React.useMemo(() => {
     if (isLoading || hasError || availableYears.length === 0) {
       return {
@@ -71,12 +87,48 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
         totalByFlat: {}
       };
     }
-    return processAmcDataForYear(selectedYear);
-  }, [processAmcDataForYear, selectedYear, isLoading, hasError, availableYears]);
+    
+    try {
+      return processAmcDataForYear(selectedYear);
+    } catch (error) {
+      console.error('Error processing AMC data for year:', selectedYear, error);
+      errorHandler.addError({
+        type: 'data_processing',
+        message: `Failed to process AMC data for year ${selectedYear}`,
+        details: { error, selectedYear },
+      });
+      
+      // Return empty data as fallback
+      return {
+        blocks: [],
+        flats: [],
+        cells: [],
+        availableYears: [],
+        selectedYear,
+        totalByBlock: {},
+        totalByFlat: {}
+      };
+    }
+  }, [processAmcDataForYear, selectedYear, isLoading, hasError, availableYears, errorHandler]);
 
   const handleYearChange = React.useCallback((year: string) => {
-    setSelectedYear(parseInt(year, 10));
-  }, []);
+    try {
+      const yearNum = parseInt(year, 10);
+      if (isNaN(yearNum)) {
+        throw new Error(`Invalid year: ${year}`);
+      }
+      setSelectedYear(yearNum);
+      // Clear any previous data processing errors when changing year
+      errorHandler.clearErrors();
+    } catch (error) {
+      console.error('Error changing year:', error);
+      errorHandler.addError({
+        type: 'validation',
+        message: `Invalid year selected: ${year}`,
+        details: { year, error },
+      });
+    }
+  }, [errorHandler]);
 
   const formatCurrency = React.useCallback((amount: number) => {
     return `₹${amount.toLocaleString('en-IN')}`;
@@ -86,6 +138,16 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
   const grandTotal = React.useMemo(() => {
     return Object.values(amcData.totalByBlock).reduce((sum, amount) => sum + amount, 0);
   }, [amcData.totalByBlock]);
+
+  if (isLoading) {
+    return (
+      <MatrixLoadingState
+        type="amc"
+        stage={loadingStage}
+        className={className}
+      />
+    );
+  }
 
   if (hasError) {
     return (
@@ -98,8 +160,24 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
               <div className="text-sm text-muted-foreground mb-4">
                 {apiError || 'Unable to load AMC payment data. Please try again.'}
               </div>
+              {retryCount > 0 && (
+                <div className="text-xs text-amber-600 mb-2">
+                  Retry attempt {retryCount}/3
+                </div>
+              )}
               {useEnhancedApi && (
                 <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                  {canRetry && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => amcApiData.retry()}
+                      disabled={isLoading}
+                    >
+                      <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+                      Retry ({3 - retryCount} left)
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -107,7 +185,7 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
                     disabled={isLoading}
                   >
                     <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-                    Retry
+                    Force Refresh
                   </Button>
                   <Button 
                     variant="outline" 
@@ -127,9 +205,20 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
   }
 
   return (
-    <div className={cn('w-full space-y-4', className)}>
-      {/* Header with year selector - Enhanced for mobile */}
-      <CollapsibleSection
+    <MatrixErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('AMC Matrix Error:', error, errorInfo);
+        errorHandler.addError({
+          type: 'unknown',
+          message: error.message,
+          details: { error, errorInfo },
+        });
+      }}
+      resetKeys={[selectedYear, owners.length, receipts.length]}
+    >
+      <div className={cn('w-full space-y-4', className)}>
+        {/* Header with year selector - Enhanced for mobile */}
+        <CollapsibleSection
         title="AMC Payment Matrix"
         icon={<BarChart3 className="h-5 w-5" />}
         defaultExpanded={true}
@@ -324,7 +413,8 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </MatrixErrorBoundary>
   );
 };
 

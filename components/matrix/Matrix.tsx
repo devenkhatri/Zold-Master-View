@@ -4,6 +4,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { MatrixCell, MatrixCellData } from './MatrixCell';
 import { MatrixTooltip } from './MatrixTooltip';
+import { AlertTriangle } from 'lucide-react';
 
 export interface MatrixData {
   blocks: string[];
@@ -74,10 +75,22 @@ const Matrix: React.FC<MatrixProps> = ({
         'flex items-center justify-center p-8 border border-destructive/20 rounded-lg bg-destructive/5',
         className
       )}>
-        <div className="text-center">
-          <div className="text-destructive font-medium mb-2">Error Loading Matrix</div>
-          <div className="text-sm text-muted-foreground">
-            Unable to load matrix data. Please try again.
+        <div className="text-center space-y-3">
+          <AlertTriangle className="h-8 w-8 text-destructive mx-auto" />
+          <div>
+            <div className="text-destructive font-medium mb-2">Error Loading Matrix</div>
+            <div className="text-sm text-muted-foreground">
+              Unable to load matrix data. This could be due to:
+            </div>
+            <ul className="text-xs text-muted-foreground mt-2 space-y-1">
+              <li>• Google Sheets API connectivity issues</li>
+              <li>• Data processing or validation errors</li>
+              <li>• Rate limiting or quota exceeded</li>
+              <li>• Network connectivity problems</li>
+            </ul>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Try refreshing the page, checking your internet connection, or waiting a few minutes if you've hit API limits.
           </div>
         </div>
       </div>
@@ -90,9 +103,17 @@ const Matrix: React.FC<MatrixProps> = ({
         'flex items-center justify-center p-8 border border-border rounded-lg bg-muted/20',
         className
       )}>
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <div className="text-sm text-muted-foreground">Loading matrix data...</div>
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <div className="absolute inset-0 w-8 h-8 border-2 border-primary/20 rounded-full mx-auto" />
+          </div>
+          <div>
+            <div className="text-sm font-medium text-foreground mb-1">Loading matrix data...</div>
+            <div className="text-xs text-muted-foreground">
+              Processing {type === 'amc' ? 'payment' : 'sticker'} information
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -104,10 +125,23 @@ const Matrix: React.FC<MatrixProps> = ({
         'flex items-center justify-center p-8 border border-border rounded-lg bg-muted/10',
         className
       )}>
-        <div className="text-center">
-          <div className="text-muted-foreground font-medium mb-2">No Data Available</div>
-          <div className="text-sm text-muted-foreground">
-            No {type === 'amc' ? 'payment' : 'sticker'} data found to display.
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
+            <div className="text-2xl text-muted-foreground">📊</div>
+          </div>
+          <div>
+            <div className="text-muted-foreground font-medium mb-2">No Data Available</div>
+            <div className="text-sm text-muted-foreground mb-3">
+              No {type === 'amc' ? 'payment' : 'sticker'} data found to display.
+            </div>
+            <div className="text-xs text-muted-foreground">
+              This could mean:
+            </div>
+            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+              <li>• No data has been uploaded yet</li>
+              <li>• Data is still being processed</li>
+              <li>• Filters are too restrictive</li>
+            </ul>
           </div>
         </div>
       </div>

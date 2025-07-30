@@ -9,7 +9,10 @@ import { ExportButtons } from './ExportButtons';
 import { CollapsibleSection } from './CollapsibleSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, Users, Car, Grid3X3, BarChart3, Info } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Users, Car, Grid3X3, BarChart3, Info, RefreshCw } from 'lucide-react';
+import { MatrixErrorBoundary } from './MatrixErrorBoundary';
+import { MatrixLoadingState } from './MatrixLoadingState';
+import { useMatrixErrorHandling } from '@/hooks/useMatrixErrorHandling';
 
 export interface StickerMatrixProps {
   owners: Owner[];
@@ -26,9 +29,11 @@ const StickerMatrix: React.FC<StickerMatrixProps> = ({
   onCellClick,
   className
 }) => {
+  // Use error handling hook
+  const errorHandler = useMatrixErrorHandling();
   const { stickerMatrixData } = useMatrixData(owners, []);
 
-  // Process sticker data
+  // Process sticker data with error handling
   const stickerData: StickerMatrixData = React.useMemo(() => {
     if (isLoading || hasError) {
       return {
@@ -39,8 +44,27 @@ const StickerMatrix: React.FC<StickerMatrixProps> = ({
         multipleStickers: []
       };
     }
-    return stickerMatrixData;
-  }, [stickerMatrixData, isLoading, hasError]);
+    
+    try {
+      return stickerMatrixData;
+    } catch (error) {
+      console.error('Error processing sticker data:', error);
+      errorHandler.addError({
+        type: 'data_processing',
+        message: 'Failed to process sticker data',
+        details: { error, owners: owners.length },
+      });
+      
+      // Return empty data as fallback
+      return {
+        blocks: [],
+        flats: [],
+        cells: [],
+        unassignedFlats: [],
+        multipleStickers: []
+      };
+    }
+  }, [stickerMatrixData, isLoading, hasError, owners.length, errorHandler]);
 
   // Calculate statistics
   const statistics = React.useMemo(() => {
@@ -81,6 +105,16 @@ const StickerMatrix: React.FC<StickerMatrixProps> = ({
     }
   }, [onCellClick]);
 
+  if (isLoading) {
+    return (
+      <MatrixLoadingState
+        type="sticker"
+        stage="processing"
+        className={className}
+      />
+    );
+  }
+
   if (hasError) {
     return (
       <Card className={cn('w-full', className)}>
@@ -100,9 +134,20 @@ const StickerMatrix: React.FC<StickerMatrixProps> = ({
   }
 
   return (
-    <div className={cn('w-full space-y-4', className)}>
-      {/* Header with statistics - Enhanced for mobile */}
-      <CollapsibleSection
+    <MatrixErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('Sticker Matrix Error:', error, errorInfo);
+        errorHandler.addError({
+          type: 'unknown',
+          message: error.message,
+          details: { error, errorInfo },
+        });
+      }}
+      resetKeys={[owners.length]}
+    >
+      <div className={cn('w-full space-y-4', className)}>
+        {/* Header with statistics - Enhanced for mobile */}
+        <CollapsibleSection
         title="Car Sticker Assignment Matrix"
         icon={<Car className="h-5 w-5" />}
         defaultExpanded={true}
@@ -339,7 +384,8 @@ const StickerMatrix: React.FC<StickerMatrixProps> = ({
           </div>
         </CollapsibleSection>
       )}
-    </div>
+      </div>
+    </MatrixErrorBoundary>
   );
 };
 

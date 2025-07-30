@@ -39,8 +39,12 @@ interface UseAmcDataReturn {
   fromCache: boolean;
   lastUpdated: string | null;
   validationErrors: string[];
+  loadingStage: 'fetching' | 'processing' | 'complete';
+  retryCount: number;
+  canRetry: boolean;
   refetch: (forceRefresh?: boolean) => Promise<void>;
   clearCache: () => Promise<void>;
+  retry: () => Promise<void>;
 }
 
 export const useAmcData = (): UseAmcDataReturn => {
@@ -49,33 +53,58 @@ export const useAmcData = (): UseAmcDataReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingStage, setLoadingStage] = useState<'fetching' | 'processing' | 'complete'>('fetching');
+  const [retryCount, setRetryCount] = useState(0);
 
-  const fetchAmcData = useCallback(async (forceRefresh: boolean = false) => {
+  const fetchAmcData = useCallback(async (forceRefresh: boolean = false, isRetry: boolean = false) => {
     try {
       setIsLoading(true);
       setHasError(false);
       setError(null);
+      setLoadingStage('fetching');
+
+      if (isRetry) {
+        setRetryCount(prev => prev + 1);
+      } else {
+        setRetryCount(0);
+      }
 
       const url = new URL('/api/amc-data', window.location.origin);
       if (forceRefresh) {
         url.searchParams.set('refresh', 'true');
       }
 
-      console.log('Fetching AMC data...', { forceRefresh });
+      console.log('Fetching AMC data...', { forceRefresh, isRetry, retryCount });
 
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        // Add timeout for better error handling
+        signal: AbortSignal.timeout(30000), // 30 second timeout
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      setLoadingStage('processing');
 
       const result: AmcApiResponse = await response.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+      if (!result.success) {
+        throw new Error(result.error || 'API returned unsuccessful response');
       }
 
+      setLoadingStage('complete');
       setData(result.data);
       setMeta(result._meta);
       
@@ -83,17 +112,34 @@ export const useAmcData = (): UseAmcDataReturn => {
         receipts: result.data.receipts.length,
         owners: result.data.owners.length,
         fromCache: result._meta.fromCache,
-        validationErrors: result._meta.validationErrors?.length || 0
+        validationErrors: result._meta.validationErrors?.length || 0,
+        retryCount
       });
 
     } catch (err) {
       console.error('Error fetching AMC data:', err);
       setHasError(true);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      
+      // Enhanced error message based on error type
+      let errorMessage = 'Unknown error occurred';
+      if (err instanceof Error) {
+        if (err.name === 'AbortError' || err.message.includes('timeout')) {
+          errorMessage = 'Request timed out. Please check your connection and try again.';
+        } else if (err.message.includes('quota') || err.message.includes('rate limit')) {
+          errorMessage = 'API rate limit exceeded. Please wait a few minutes and try again.';
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
       setData(null);
       setMeta(null);
     } finally {
       setIsLoading(false);
+      setLoadingStage('complete');
     }
   }, []);
 
@@ -125,6 +171,12 @@ export const useAmcData = (): UseAmcDataReturn => {
       setError(err instanceof Error ? err.message : 'Failed to clear cache');
     }
   }, [fetchAmcData]);
+
+  const retry = useCallback(async () => {
+    if (retryCount < 3) { // Max 3 retries
+      await fetchAmcData(false, true);
+    }
+  }, [fetchAmcData, retryCount]);
 
   // Initial data fetch
   useEffect(() => {
@@ -160,7 +212,11 @@ export const useAmcData = (): UseAmcDataReturn => {
     fromCache: meta?.fromCache || false,
     lastUpdated: meta?.receivedAt || null,
     validationErrors: meta?.validationErrors || [],
+    loadingStage,
+    retryCount,
+    canRetry: retryCount < 3 && hasError,
     refetch: fetchAmcData,
     clearCache,
+    retry,
   };
 };
