@@ -37,10 +37,10 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
 }) => {
   // Use error handling hook
   const errorHandler = useMatrixErrorHandling();
-  
+
   // Use the enhanced AMC API if enabled, otherwise fall back to props
   const amcApiData = useAmcData();
-  
+
   const owners = useEnhancedApi ? amcApiData.owners : (propOwners || []);
   const receipts = useEnhancedApi ? amcApiData.receipts : (propReceipts || []);
   const isLoading = useEnhancedApi ? amcApiData.isLoading : propIsLoading;
@@ -52,16 +52,16 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
   const loadingStage = useEnhancedApi ? amcApiData.loadingStage : 'complete';
   const canRetry = useEnhancedApi ? amcApiData.canRetry : false;
   const retryCount = useEnhancedApi ? amcApiData.retryCount : 0;
-  
+
   // Handle API errors
   React.useEffect(() => {
     if (apiError && useEnhancedApi) {
       errorHandler.handleApiError(apiError, 'AMC Data Loading');
     }
   }, [apiError, useEnhancedApi, errorHandler]);
-  
+
   const { availableYears, processAmcDataForYear } = useMatrixData(owners, receipts);
-  
+
   // Default to the most recent year
   const [selectedYear, setSelectedYear] = React.useState<number>(() => {
     return availableYears.length > 0 ? availableYears[0] : new Date().getFullYear();
@@ -87,7 +87,7 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
         totalByFlat: {}
       };
     }
-    
+
     try {
       return processAmcDataForYear(selectedYear);
     } catch (error) {
@@ -97,7 +97,7 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
         message: `Failed to process AMC data for year ${selectedYear}`,
         details: { error, selectedYear },
       });
-      
+
       // Return empty data as fallback
       return {
         blocks: [],
@@ -168,9 +168,9 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
               {useEnhancedApi && (
                 <div className="flex flex-col sm:flex-row gap-2 justify-center">
                   {canRetry && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => amcApiData.retry()}
                       disabled={isLoading}
                     >
@@ -178,18 +178,18 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
                       Retry ({3 - retryCount} left)
                     </Button>
                   )}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => amcApiData.refetch(true)}
                     disabled={isLoading}
                   >
                     <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
                     Force Refresh
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => amcApiData.clearCache()}
                     disabled={isLoading}
                   >
@@ -219,200 +219,200 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
       <div className={cn('w-full space-y-4', className)}>
         {/* Header with year selector - Enhanced for mobile */}
         <CollapsibleSection
-        title="AMC Payment Matrix"
-        icon={<BarChart3 className="h-5 w-5" />}
-        defaultExpanded={true}
-        collapsibleOnMobile={false}
-        alwaysExpanded={true}
-      >
-        <div className="flex flex-col space-y-4">
-          {/* Controls row - responsive layout */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              {availableYears.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <label htmlFor="year-selector" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                    Year:
-                  </label>
-                  <Select
-                    value={selectedYear.toString()}
-                    onValueChange={handleYearChange}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger id="year-selector" className="w-full sm:w-32">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableYears.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              {/* Enhanced API controls */}
-              {useEnhancedApi && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => amcApiData.refetch(true)}
-                    disabled={isLoading}
-                    className="text-xs"
-                  >
-                    <RefreshCw className={cn("h-3 w-3 mr-1", isLoading && "animate-spin")} />
-                    Refresh
-                  </Button>
-                  {fromCache && (
-                    <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                      Cached
-                    </span>
-                  )}
-                </div>
-              )}
-              
-              {/* Summary info - responsive layout */}
-              {!isLoading && !hasError && amcData.blocks.length > 0 && (
-                <div className="flex flex-wrap gap-2 sm:gap-4 text-sm text-muted-foreground">
-                  <span className="bg-muted/50 px-2 py-1 rounded text-xs sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
-                    {amcData.blocks.length} blocks
-                  </span>
-                  <span className="bg-muted/50 px-2 py-1 rounded text-xs sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
-                    {amcData.flats.length} flats
-                  </span>
-                  <span className="bg-primary/10 px-2 py-1 rounded text-xs font-medium text-primary sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm sm:text-foreground">
-                    Total: {formatCurrency(grandTotal)}
-                  </span>
-                </div>
-              )}
-              
-              {/* Validation warnings */}
-              {validationErrors.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-amber-600">
-                  <AlertTriangle className="h-3 w-3" />
-                  <span>{validationErrors.length} validation warnings</span>
-                </div>
-              )}
-            </div>
-            
-            {/* Export buttons - full width on mobile */}
-            <div className="w-full sm:w-auto">
-              <ExportButtons
-                data={amcData}
-                type="amc"
-                disabled={isLoading || hasError || amcData.blocks.length === 0}
-                className="w-full sm:w-auto"
-              />
-            </div>
-          </div>
-        </div>
-      </CollapsibleSection>
-
-      {/* Matrix display - Enhanced responsive container */}
-      <CollapsibleSection
-        title="Payment Matrix"
-        icon={<Grid3X3 className="h-5 w-5" />}
-        defaultExpanded={true}
-        collapsibleOnMobile={true}
-        contentClassName="p-0"
-      >
-        <div className="relative">
-          {/* Mobile scroll hint */}
-          <div className="block sm:hidden bg-muted/50 px-3 py-2 text-xs text-muted-foreground border-b border-border">
-            💡 Scroll horizontally to view all flats
-          </div>
-          
-          <Matrix
-            data={{
-              blocks: amcData.blocks,
-              flats: amcData.flats,
-              cells: amcData.cells
-            }}
-            type="amc"
-            isLoading={isLoading}
-            hasError={hasError}
-            onCellClick={onCellClick}
-            aria-label={`AMC Payment Matrix for ${selectedYear}`}
-          />
-          
-          {/* Totals overlay - Hidden on mobile for better UX */}
-          {!isLoading && !hasError && amcData.blocks.length > 0 && (
-            <div className="hidden lg:block absolute top-0 right-0 bg-background border-l border-b border-border">
-              {/* Column totals header */}
-              <div className="sticky top-0 z-10 bg-muted border-b border-border p-3 font-semibold text-center min-w-[100px]">
-                Total
-              </div>
-              
-              {/* Row totals */}
-              {amcData.blocks.map((block) => (
-                <div
-                  key={`total-${block}`}
-                  className="border-b border-border p-3 text-center font-medium bg-muted/50 min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px] flex items-center justify-center"
-                  title={`Total for Block ${block}: ${formatCurrency(amcData.totalByBlock[block] || 0)}`}
-                >
-                  {formatCurrency(amcData.totalByBlock[block] || 0)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </CollapsibleSection>
-
-      {/* Column totals - Collapsible on mobile */}
-      {!isLoading && !hasError && amcData.blocks.length > 0 && (
-        <CollapsibleSection
-          title="Totals by Flat"
-          icon={<Calculator className="h-5 w-5" />}
-          defaultExpanded={false}
-          collapsibleOnMobile={true}
+          title="AMC Payment Matrix"
+          icon={<BarChart3 className="h-5 w-5" />}
+          defaultExpanded={true}
+          collapsibleOnMobile={false}
+          alwaysExpanded={true}
         >
-          {/* Responsive grid with better mobile layout */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3">
-            {amcData.flats.map((flat) => (
-              <div
-                key={`flat-total-${flat}`}
-                className="flex flex-col items-center p-2 sm:p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
-              >
-                <div className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
-                  Flat {flat}
-                </div>
-                <div className="text-xs sm:text-sm font-semibold text-center">
-                  {formatCurrency(amcData.totalByFlat[flat] || 0)}
-                </div>
+          <div className="flex flex-col space-y-4">
+            {/* Controls row - responsive layout */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                {availableYears.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="year-selector" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                      Year:
+                    </label>
+                    <Select
+                      value={selectedYear.toString()}
+                      onValueChange={handleYearChange}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger id="year-selector" className="w-full sm:w-32">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableYears.map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Enhanced API controls */}
+                {useEnhancedApi && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => amcApiData.refetch(true)}
+                      disabled={isLoading}
+                      className="text-xs"
+                    >
+                      <RefreshCw className={cn("h-3 w-3 mr-1", isLoading && "animate-spin")} />
+                      Refresh
+                    </Button>
+                    {fromCache && (
+                      <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                        Cached
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Summary info - responsive layout */}
+                {!isLoading && !hasError && amcData.blocks.length > 0 && (
+                  <div className="flex flex-wrap gap-2 sm:gap-4 text-sm text-muted-foreground">
+                    <span className="bg-muted/50 px-2 py-1 rounded text-xs sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
+                      {amcData.blocks.length} blocks
+                    </span>
+                    <span className="bg-muted/50 px-2 py-1 rounded text-xs sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
+                      {amcData.flats.length} flats
+                    </span>
+                    <span className="bg-primary/10 px-2 py-1 rounded text-xs font-medium text-primary sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm sm:text-foreground">
+                      Total: {formatCurrency(grandTotal)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Validation warnings */}
+                {validationErrors.length > 0 && (
+                  <div className="flex items-center gap-1 text-xs text-amber-600">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>{validationErrors.length} validation warnings</span>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-          
-          {/* Grand total - Enhanced mobile layout */}
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-              <span className="text-base sm:text-lg font-semibold">Grand Total:</span>
-              <span className="text-lg sm:text-xl font-bold text-primary">
-                {formatCurrency(grandTotal)}
-              </span>
+
+              {/* Export buttons - full width on mobile */}
+              <div className="w-full sm:w-auto">
+                <ExportButtons
+                  data={amcData}
+                  type="amc"
+                  disabled={isLoading || hasError || amcData.blocks.length === 0}
+                  className="w-full sm:w-auto"
+                />
+              </div>
             </div>
           </div>
         </CollapsibleSection>
-      )}
 
-      {/* No data state */}
-      {!isLoading && !hasError && availableYears.length === 0 && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center text-center">
-              <div>
-                <div className="text-muted-foreground font-medium mb-2">No Payment Data Available</div>
-                <div className="text-sm text-muted-foreground">
-                  No AMC payment records found. Please ensure receipt data is available.
+        {/* Matrix display - Enhanced responsive container */}
+        <CollapsibleSection
+          title="Payment Matrix"
+          icon={<Grid3X3 className="h-5 w-5" />}
+          defaultExpanded={true}
+          collapsibleOnMobile={true}
+          contentClassName="p-0"
+        >
+          <div className="relative">
+            {/* Mobile scroll hint */}
+            <div className="block sm:hidden bg-muted/50 px-3 py-2 text-xs text-muted-foreground border-b border-border">
+              💡 Scroll horizontally to view all flats
+            </div>
+
+            <Matrix
+              data={{
+                blocks: amcData.blocks,
+                flats: amcData.flats,
+                cells: amcData.cells
+              }}
+              type="amc"
+              isLoading={isLoading}
+              hasError={hasError}
+              onCellClick={onCellClick}
+              aria-label={`AMC Payment Matrix for ${selectedYear}`}
+            />
+
+            {/* Totals overlay - Hidden on mobile for better UX */}
+            {!isLoading && !hasError && amcData.blocks.length > 0 && (
+              <div className="hidden lg:block absolute top-0 right-0 bg-background border-l border-b border-border">
+                {/* Column totals header */}
+                <div className="sticky top-0 z-10 bg-muted border-b border-border p-3 font-semibold text-center min-w-[100px]">
+                  Total
                 </div>
+
+                {/* Row totals */}
+                {amcData.blocks.map((block) => (
+                  <div
+                    key={`total-${block}`}
+                    className="border-b border-border p-3 text-center font-medium bg-muted/50 min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px] flex items-center justify-center"
+                    title={`Total for Block ${block}: ${formatCurrency(amcData.totalByBlock[block] || 0)}`}
+                  >
+                    {formatCurrency(amcData.totalByBlock[block] || 0)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
+
+        {/* Block totals - Collapsible on mobile */}
+        {!isLoading && !hasError && amcData.blocks.length > 0 && (
+          <CollapsibleSection
+            title="Totals by Block"
+            icon={<Calculator className="h-5 w-5" />}
+            defaultExpanded={false}
+            collapsibleOnMobile={true}
+          >
+            {/* Responsive grid with better mobile layout */}
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3">
+              {amcData.blocks.map((block) => (
+                <div
+                  key={`block-total-${block}`}
+                  className="flex flex-col items-center p-2 sm:p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
+                >
+                  <div className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
+                    Block {block}
+                  </div>
+                  <div className="text-xs sm:text-sm font-semibold text-center">
+                    {formatCurrency(amcData.totalByBlock[block] || 0)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Grand total - Enhanced mobile layout */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span className="text-base sm:text-lg font-semibold">Grand Total:</span>
+                <span className="text-lg sm:text-xl font-bold text-primary">
+                  {formatCurrency(grandTotal)}
+                </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </CollapsibleSection>
+        )}
+
+        {/* No data state */}
+        {!isLoading && !hasError && availableYears.length === 0 && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center text-center">
+                <div>
+                  <div className="text-muted-foreground font-medium mb-2">No Payment Data Available</div>
+                  <div className="text-sm text-muted-foreground">
+                    No AMC payment records found. Please ensure receipt data is available.
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </MatrixErrorBoundary>
   );
