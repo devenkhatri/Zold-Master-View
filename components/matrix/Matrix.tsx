@@ -62,10 +62,11 @@ const Matrix: React.FC<MatrixProps> = ({
     setTooltipPosition(null);
   }, []);
 
-  // Generate grid template columns based on number of flats
+  // Generate grid template columns based on number of flats with better overflow handling
   const gridTemplateColumns = React.useMemo(() => {
     const headerWidth = '80px'; // Width for block headers
-    const cellWidth = 'minmax(80px, 1fr)';
+    // Use fixed max width to prevent overflow while maintaining minimum usability
+    const cellWidth = 'minmax(80px, 120px)';
     return `${headerWidth} repeat(${data.flats.length}, ${cellWidth})`;
   }, [data.flats.length]);
 
@@ -192,18 +193,19 @@ const Matrix: React.FC<MatrixProps> = ({
           style={{ gridTemplateColumns }}
         >
           {/* Header row */}
-          <div className="sticky top-0 left-0 z-20 bg-muted border-b border-r border-border p-3 font-semibold text-center">
-            Block / Flat
+          <div className="sticky top-0 left-0 z-20 bg-muted border-b border-r border-border p-3 font-semibold text-center overflow-hidden">
+            <span className="truncate block text-xs sm:text-sm">Block / Flat</span>
           </div>
           
           {data.flats.map((flat) => (
             <div
               key={flat}
-              className="sticky top-0 z-10 bg-muted border-b border-border p-3 font-semibold text-center min-w-[80px]"
+              className="sticky top-0 z-10 bg-muted border-b border-border p-3 font-semibold text-center min-w-[80px] max-w-[120px] overflow-hidden"
               role="columnheader"
               aria-label={`Flat ${flat}`}
+              title={flat}
             >
-              {flat}
+              <span className="truncate block">{flat}</span>
             </div>
           ))}
 
@@ -212,11 +214,12 @@ const Matrix: React.FC<MatrixProps> = ({
             <React.Fragment key={block}>
               {/* Block header */}
               <div
-                className="sticky left-0 z-10 bg-muted border-r border-border p-3 font-semibold text-center"
+                className="sticky left-0 z-10 bg-muted border-r border-border p-3 font-semibold text-center overflow-hidden"
                 role="rowheader"
                 aria-label={`Block ${block}`}
+                title={block}
               >
-                {block}
+                <span className="truncate block">{block}</span>
               </div>
 
               {/* Cells for this block */}

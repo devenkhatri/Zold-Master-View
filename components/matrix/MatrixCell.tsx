@@ -85,7 +85,14 @@ const MatrixCell = React.forwardRef<HTMLDivElement, MatrixCellProps>(
         return `₹${value.toLocaleString('en-IN')}`;
       }
       
-      return String(value);
+      const stringValue = String(value);
+      
+      // For sticker type, truncate very long values to prevent overflow
+      if (type === 'sticker' && stringValue.length > 12) {
+        return stringValue.substring(0, 9) + '...';
+      }
+      
+      return stringValue;
     }, [type]);
 
     const getCellVariant = React.useCallback(() => {
@@ -100,16 +107,16 @@ const MatrixCell = React.forwardRef<HTMLDivElement, MatrixCellProps>(
     const isEmpty = variant === 'empty';
 
     const cellClasses = cn(
-      // Base styles with improved mobile-first approach
-      'relative min-h-[44px] min-w-[70px] p-2 border border-border',
+      // Base styles with improved mobile-first approach and overflow handling
+      'relative min-h-[44px] min-w-[70px] max-w-[120px] p-2 border border-border',
       'flex items-center justify-center text-xs font-medium',
-      'transition-all duration-200 ease-in-out',
+      'transition-all duration-200 ease-in-out overflow-hidden',
       
       // Progressive enhancement for larger screens
-      'sm:min-h-[48px] sm:min-w-[80px] sm:p-2.5 sm:text-sm',
-      'md:min-h-[52px] md:min-w-[90px] md:p-3 md:text-sm',
-      'lg:min-h-[56px] lg:min-w-[100px] lg:p-4 lg:text-base',
-      'xl:min-h-[60px] xl:min-w-[110px]',
+      'sm:min-h-[48px] sm:min-w-[80px] sm:max-w-[140px] sm:p-2.5 sm:text-sm',
+      'md:min-h-[52px] md:min-w-[90px] md:max-w-[160px] md:p-3 md:text-sm',
+      'lg:min-h-[56px] lg:min-w-[100px] lg:max-w-[180px] lg:p-4 lg:text-base',
+      'xl:min-h-[60px] xl:min-w-[110px] xl:max-w-[200px]',
       
       // Interactive states with enhanced touch support
       isInteractive && [
@@ -206,18 +213,20 @@ const MatrixCell = React.forwardRef<HTMLDivElement, MatrixCellProps>(
         {...props}
       >
         {/* Main content */}
-        <div className="flex flex-col items-center justify-center text-center">
+        <div className="flex flex-col items-center justify-center text-center w-full h-full overflow-hidden">
           <span className={cn(
-            'truncate max-w-full',
+            'truncate w-full text-center leading-tight',
             isEmpty && 'text-xs opacity-70',
-            variant === 'error' && 'text-destructive'
-          )}>
+            variant === 'error' && 'text-destructive',
+            // Ensure text fits within cell bounds
+            'max-w-full overflow-hidden text-ellipsis whitespace-nowrap'
+          )} title={displayValue}>
             {displayValue}
           </span>
           
           {/* Additional metadata for sticker type */}
           {type === 'sticker' && data.metadata?.stickerCount && data.metadata.stickerCount > 1 && (
-            <span className="text-xs text-muted-foreground mt-1">
+            <span className="text-xs text-muted-foreground mt-1 truncate w-full" title={`+${data.metadata.stickerCount - 1} more`}>
               +{data.metadata.stickerCount - 1} more
             </span>
           )}
