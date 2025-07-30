@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Owner, Receipt } from '@/types/property';
 import { useMatrixData, AmcMatrixData } from '@/hooks/useMatrixData';
 import { Matrix } from './Matrix';
+import { ExportButtons } from './ExportButtons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -95,29 +96,37 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
               AMC Payment Matrix
             </CardTitle>
             
-            {availableYears.length > 0 && (
-              <div className="flex items-center gap-2">
-                <label htmlFor="year-selector" className="text-sm font-medium text-muted-foreground">
-                  Year:
-                </label>
-                <Select
-                  value={selectedYear.toString()}
-                  onValueChange={handleYearChange}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger id="year-selector" className="w-32">
-                    <SelectValue placeholder="Select year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableYears.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {availableYears.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="year-selector" className="text-sm font-medium text-muted-foreground">
+                    Year:
+                  </label>
+                  <Select
+                    value={selectedYear.toString()}
+                    onValueChange={handleYearChange}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="year-selector" className="w-32">
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableYears.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <ExportButtons
+                data={amcData}
+                type="amc"
+                disabled={isLoading || hasError || amcData.blocks.length === 0}
+              />
+            </div>
           </div>
           
           {/* Summary info */}

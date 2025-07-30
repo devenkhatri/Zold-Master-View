@@ -35,14 +35,14 @@
   - Include breadcrumb navigation for better user experience
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [-] 6. Implement matrix page routes
+- [x] 6. Implement matrix page routes
   - Create /matrix/amc page with AMC matrix view
   - Create /matrix/stickers page with car sticker matrix view
   - Wrap both pages with ProtectedRoute for authentication
   - Add proper page titles and meta information
   - _Requirements: 3.1, 3.3_
 
-- [ ] 7. Add export functionality
+- [x] 7. Add export functionality
   - Implement CSV export for both matrix types
   - Add Excel export with proper formatting and styling
   - Include metadata and timestamps in exported files

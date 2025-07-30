@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Owner } from '@/types/property';
 import { useMatrixData, StickerMatrixData } from '@/hooks/useMatrixData';
 import { Matrix } from './Matrix';
+import { ExportButtons } from './ExportButtons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle2, Users } from 'lucide-react';
@@ -106,6 +107,12 @@ const StickerMatrix: React.FC<StickerMatrixProps> = ({
             <CardTitle className="text-xl font-semibold">
               Car Sticker Assignment Matrix
             </CardTitle>
+            
+            <ExportButtons
+              data={stickerData}
+              type="sticker"
+              disabled={isLoading || hasError || stickerData.blocks.length === 0}
+            />
           </div>
           
           {/* Statistics */}
