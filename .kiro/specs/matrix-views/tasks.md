@@ -35,7 +35,7 @@
   - Include breadcrumb navigation for better user experience
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 6. Implement matrix page routes
+- [-] 6. Implement matrix page routes
   - Create /matrix/amc page with AMC matrix view
   - Create /matrix/stickers page with car sticker matrix view
   - Wrap both pages with ProtectedRoute for authentication
