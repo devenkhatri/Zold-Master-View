@@ -40,7 +40,7 @@ describe('MatrixNavigation', () => {
     
     render(<MatrixNavigation />);
     
-    expect(screen.getByText('Matrix Views')).toBeInTheDocument();
+    expect(screen.getAllByText('Matrix Views')).toHaveLength(2); // One in breadcrumb, one in header
     expect(screen.getByText('AMC Matrix')).toBeInTheDocument();
     expect(screen.getByText('Car Sticker Matrix')).toBeInTheDocument();
   });
@@ -60,7 +60,7 @@ describe('MatrixNavigation', () => {
     render(<MatrixNavigation />);
     
     expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.getByText('Matrix Views')).toBeInTheDocument();
+    expect(screen.getAllByText('Matrix Views')).toHaveLength(2); // One in breadcrumb, one in header
     expect(screen.getByText('Car Sticker Matrix')).toBeInTheDocument();
   });
 

@@ -56,14 +56,31 @@
   - Test and adjust layouts across different screen sizes
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 9. Add comprehensive error handling
+- [x] 9. Implement Google Sheets data fetching for AMC matrix
+  - Create API endpoint to fetch AMC payment data from Google Sheets
+  - Implement data validation and transformation for AMC records
+  - Add caching mechanism to reduce API calls and improve performance
+  - Handle authentication and authorization for Google Sheets access
+  - Add error handling for Google Sheets API failures
+  - _Requirements: 1.1, 1.2, 1.3, 1.4_
+
+- [ ] 10. Implement Google Sheets data fetching for sticker matrix
+  - Create API endpoint to fetch car sticker data from Google Sheets
+  - Implement data validation and transformation for sticker records
+  - Add support for multiple sticker assignments per flat
+  - Handle missing or incomplete sticker data gracefully
+  - Add caching mechanism for sticker data to improve performance
+  - _Requirements: 2.1, 2.2, 2.3, 2.4_
+
+- [ ] 11. Add comprehensive error handling
   - Implement error boundaries for matrix components
   - Add retry mechanisms for failed data processing
   - Create user-friendly error messages for various failure scenarios
   - Add loading states during data transformation and rendering
+  - Handle Google Sheets API rate limiting and quota errors
   - _Requirements: 1.5, 2.3, 5.1_
 
-- [ ] 10. Integrate matrix views into main navigation
+- [ ] 12. Integrate matrix views into main navigation
   - Add matrix view links to the main application header
   - Update existing navigation components to include matrix options
   - Ensure proper active state highlighting for matrix routes

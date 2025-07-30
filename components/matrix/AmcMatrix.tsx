@@ -4,30 +4,46 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Owner, Receipt } from '@/types/property';
 import { useMatrixData, AmcMatrixData } from '@/hooks/useMatrixData';
+import { useAmcData } from '@/hooks/useAmcData';
 import { Matrix } from './Matrix';
 import { ExportButtons } from './ExportButtons';
 import { CollapsibleSection } from './CollapsibleSection';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, Calculator, Grid3X3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BarChart3, Calculator, Grid3X3, RefreshCw, AlertTriangle } from 'lucide-react';
 
 export interface AmcMatrixProps {
-  owners: Owner[];
-  receipts: Receipt[];
+  owners?: Owner[];
+  receipts?: Receipt[];
   isLoading?: boolean;
   hasError?: boolean;
   onCellClick?: (data: any) => void;
   className?: string;
+  useEnhancedApi?: boolean; // Flag to use the new AMC API
 }
 
 const AmcMatrix: React.FC<AmcMatrixProps> = ({
-  owners,
-  receipts,
-  isLoading = false,
-  hasError = false,
+  owners: propOwners,
+  receipts: propReceipts,
+  isLoading: propIsLoading = false,
+  hasError: propHasError = false,
   onCellClick,
-  className
+  className,
+  useEnhancedApi = true // Default to using the enhanced API
 }) => {
+  // Use the enhanced AMC API if enabled, otherwise fall back to props
+  const amcApiData = useAmcData();
+  
+  const owners = useEnhancedApi ? amcApiData.owners : (propOwners || []);
+  const receipts = useEnhancedApi ? amcApiData.receipts : (propReceipts || []);
+  const isLoading = useEnhancedApi ? amcApiData.isLoading : propIsLoading;
+  const hasError = useEnhancedApi ? amcApiData.hasError : propHasError;
+  const apiError = useEnhancedApi ? amcApiData.error : null;
+  const fromCache = useEnhancedApi ? amcApiData.fromCache : false;
+  const validationErrors = useEnhancedApi ? amcApiData.validationErrors : [];
+  const summary = useEnhancedApi ? amcApiData.summary : null;
+  
   const { availableYears, processAmcDataForYear } = useMatrixData(owners, receipts);
   
   // Default to the most recent year
@@ -75,12 +91,34 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
     return (
       <Card className={cn('w-full', className)}>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center text-center">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <AlertTriangle className="h-12 w-12 text-destructive" />
             <div>
               <div className="text-destructive font-medium mb-2">Error Loading AMC Matrix</div>
-              <div className="text-sm text-muted-foreground">
-                Unable to load AMC payment data. Please try again.
+              <div className="text-sm text-muted-foreground mb-4">
+                {apiError || 'Unable to load AMC payment data. Please try again.'}
               </div>
+              {useEnhancedApi && (
+                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => amcApiData.refetch(true)}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+                    Retry
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => amcApiData.clearCache()}
+                    disabled={isLoading}
+                  >
+                    Clear Cache
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -126,6 +164,27 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
                 </div>
               )}
               
+              {/* Enhanced API controls */}
+              {useEnhancedApi && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => amcApiData.refetch(true)}
+                    disabled={isLoading}
+                    className="text-xs"
+                  >
+                    <RefreshCw className={cn("h-3 w-3 mr-1", isLoading && "animate-spin")} />
+                    Refresh
+                  </Button>
+                  {fromCache && (
+                    <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                      Cached
+                    </span>
+                  )}
+                </div>
+              )}
+              
               {/* Summary info - responsive layout */}
               {!isLoading && !hasError && amcData.blocks.length > 0 && (
                 <div className="flex flex-wrap gap-2 sm:gap-4 text-sm text-muted-foreground">
@@ -138,6 +197,14 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
                   <span className="bg-primary/10 px-2 py-1 rounded text-xs font-medium text-primary sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm sm:text-foreground">
                     Total: {formatCurrency(grandTotal)}
                   </span>
+                </div>
+              )}
+              
+              {/* Validation warnings */}
+              {validationErrors.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-amber-600">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>{validationErrors.length} validation warnings</span>
                 </div>
               )}
             </div>

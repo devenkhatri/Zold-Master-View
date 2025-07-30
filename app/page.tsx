@@ -5,7 +5,8 @@ import { OwnerTable } from '@/components/OwnerTable';
 import { ReceiptTable } from '@/components/ReceiptTable';
 import { usePropertyData } from '@/hooks/usePropertyData';
 import { MatrixNavigation } from '@/components/matrix/MatrixNavigation';
-import { Building2, Database, Search, XCircle, User, CreditCard, Car, Check, LogOut, Home } from 'lucide-react';
+import { Navigation } from '@/components/Navigation';
+import { Building2, Database, Search, XCircle, User, CreditCard, Car, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,28 +49,7 @@ function Dashboard() {
                 <p className="text-blue-100 text-sm">Property & Payment Management System</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              {user && (
-                <>
-                  <button
-                    onClick={() => router.push('/matrix')}
-                    className="inline-flex items-center p-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    aria-label="Matrix Views"
-                  >
-                    <Building2 className="h-4 w-4 sm:mr-1" />
-                    <span className="sr-only sm:not-sr-only sm:inline">Matrix Views</span>
-                  </button>
-                  <button
-                    onClick={logout}
-                    className="inline-flex items-center p-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    aria-label="Logout"
-                  >
-                    <LogOut className="h-4 w-4 sm:mr-1" />
-                    <span className="sr-only sm:not-sr-only sm:inline">Logout</span>
-                  </button>
-                </>
-              )}
-            </div>
+            <Navigation />
           </div>
         </div>
       </div>

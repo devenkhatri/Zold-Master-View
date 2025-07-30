@@ -1,6 +1,7 @@
 'use client';
 
 import { MatrixNavigation } from '@/components/matrix/MatrixNavigation';
+import { Navigation } from '@/components/Navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, BarChart3, Car } from 'lucide-react';
@@ -11,12 +12,15 @@ function MatrixIndexPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-3">
-            <Building2 className="h-8 w-8 text-white" />
-            <div>
-              <h1 className="text-2xl font-bold">Matrix Views</h1>
-              <p className="text-blue-100 text-sm">Analyze property data in structured matrix format</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-8 w-8 text-white" />
+              <div>
+                <h1 className="text-2xl font-bold">Matrix Views</h1>
+                <p className="text-blue-100 text-sm">Analyze property data in structured matrix format</p>
+              </div>
             </div>
+            <Navigation />
           </div>
         </div>
       </div>
