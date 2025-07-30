@@ -48,6 +48,7 @@ export const AmcMatrixTest: React.FC = () => {
 
       <div className="border border-border rounded-lg p-4">
         <AmcMatrix
+          useEnhancedApi={false}
           owners={mockOwners}
           receipts={mockReceipts}
           isLoading={isLoading}
