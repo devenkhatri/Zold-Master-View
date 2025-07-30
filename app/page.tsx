@@ -4,6 +4,7 @@ import { FilterControls } from '@/components/FilterControls';
 import { OwnerTable } from '@/components/OwnerTable';
 import { ReceiptTable } from '@/components/ReceiptTable';
 import { usePropertyData } from '@/hooks/usePropertyData';
+import { MatrixNavigation } from '@/components/matrix/MatrixNavigation';
 import { Building2, Database, Search, XCircle, User, CreditCard, Car, Check, LogOut, Home } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,13 +14,13 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 function Dashboard() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { 
-    filters, 
-    filteredData, 
-    isLoading, 
-    error, 
-    updateFilters, 
-    resetFilters 
+  const {
+    filters,
+    filteredData,
+    isLoading,
+    error,
+    updateFilters,
+    resetFilters
   } = usePropertyData();
 
   // Handle 'q' query parameter for auto-searching
@@ -27,7 +28,7 @@ function Dashboard() {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const searchQuery = searchParams.get('q');
-      
+
       if (searchQuery && searchQuery !== filters.searchTerm) {
         updateFilters({ searchTerm: searchQuery });
       }
@@ -48,23 +49,25 @@ function Dashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* <button
-                onClick={() => router.push('/')}
-                className="inline-flex items-center p-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                aria-label="Home"
-              >
-                <Home className="h-4 w-4 sm:mr-1" />
-                <span className="sr-only sm:not-sr-only sm:inline">Home</span>
-              </button> */}
               {user && (
-                <button
-                  onClick={logout}
-                  className="inline-flex items-center p-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  aria-label="Logout"
-                >
-                  <LogOut className="h-4 w-4 sm:mr-1" />
-                  <span className="sr-only sm:not-sr-only sm:inline">Logout</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => router.push('/matrix')}
+                    className="inline-flex items-center p-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    aria-label="Matrix Views"
+                  >
+                    <Building2 className="h-4 w-4 sm:mr-1" />
+                    <span className="sr-only sm:not-sr-only sm:inline">Matrix Views</span>
+                  </button>
+                  <button
+                    onClick={logout}
+                    className="inline-flex items-center p-2 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    aria-label="Logout"
+                  >
+                    <LogOut className="h-4 w-4 sm:mr-1" />
+                    <span className="sr-only sm:not-sr-only sm:inline">Logout</span>
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -87,14 +90,17 @@ function Dashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 py-4 sm:px-4 sm:py-6">
+        {/* Matrix Navigation */}
+        <MatrixNavigation className="mb-6" />
+
         {/* Search Section */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-            <FilterControls
-              filters={filters}
-              onFiltersChange={updateFilters}
-              onReset={resetFilters}
-              isLoading={isLoading}
-            />
+          <FilterControls
+            filters={filters}
+            onFiltersChange={updateFilters}
+            onReset={resetFilters}
+            isLoading={isLoading}
+          />
         </div>
 
         {/* Error State */}
@@ -139,7 +145,7 @@ function Dashboard() {
                 <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
                   Enter a search term to find property owners, payment records, vehicle information, and more.
                 </p>
-                
+
                 <div className="mt-10 mb-6">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center" aria-hidden="true">
@@ -157,7 +163,7 @@ function Dashboard() {
                       { text: "9876543210", type: "Phone" },
                       { text: "B-01", type: "Car Sticker" },
                       { text: "REC-2023-001", type: "Receipt" }
-                    ].map(({text, type}) => (
+                    ].map(({ text, type }) => (
                       <div key={text} className="group relative">
                         <button
                           type="button"
@@ -178,7 +184,7 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Use Cases Section */}
               <div className="bg-gray-50 p-8 border-t border-gray-200">
                 <h3 className="text-lg font-medium text-center text-gray-900 mb-6">How can I use this system?</h3>
@@ -244,10 +250,10 @@ function Dashboard() {
               )}
             </div>
             <div className="mt-4 md:mt-0">
-              <a 
-                href="https://www.devengoratela.com" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href="https://www.devengoratela.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-xs text-gray-500 hover:text-gray-700"
               >
                 Made with ❤️ by Zold IT Team

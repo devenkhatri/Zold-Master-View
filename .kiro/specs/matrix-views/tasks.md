@@ -21,14 +21,14 @@
   - Include row and column totals for blocks and flats
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-- [ ] 4. Build Car Sticker Matrix component
+- [x] 4. Build Car Sticker Matrix component
   - Create StickerMatrix component that displays sticker assignments
   - Handle multiple stickers per flat with proper formatting
   - Highlight unassigned flats with visual indicators
   - Add click handlers to show detailed sticker information
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 5. Create matrix navigation component
+- [x] 5. Create matrix navigation component
   - Implement MatrixNavigation component for switching between views
   - Add navigation links that integrate with existing header structure
   - Maintain consistent styling with current application design
