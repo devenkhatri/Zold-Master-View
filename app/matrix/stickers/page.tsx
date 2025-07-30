@@ -1,17 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { MatrixNavigation } from '@/components/matrix/MatrixNavigation';
 import { Navigation } from '@/components/Navigation';
 import { StickerMatrix } from '@/components/matrix/StickerMatrix';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { Owner } from '@/types/property';
+import { useStickerData } from '@/hooks/useStickerData';
 import { Car } from 'lucide-react';
 
 function StickerMatrixPage() {
-  const [owners, setOwners] = useState<Owner[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const { 
+    owners, 
+    isLoading, 
+    hasError, 
+    error,
+    summary,
+    validationErrors,
+    refetch 
+  } = useStickerData();
 
   useEffect(() => {
     // Set page title and meta description
@@ -20,33 +26,34 @@ function StickerMatrixPage() {
     if (metaDescription) {
       metaDescription.setAttribute('content', 'View car sticker assignments organized by block and flat. Identify unassigned units and multiple sticker assignments.');
     }
-
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        setHasError(false);
-        
-        const response = await fetch('/api/sheets');
-        if (!response.ok) {
-          throw new Error('Failed to fetch data');
-        }
-        
-        const data = await response.json();
-        setOwners(data.owners || []);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setHasError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
   }, []);
+
+  // Log validation errors if any
+  useEffect(() => {
+    if (validationErrors.length > 0) {
+      console.warn('Sticker data validation warnings:', validationErrors);
+    }
+  }, [validationErrors]);
 
   const handleCellClick = (cellData: any) => {
     // Handle cell click - could show detailed sticker information
     console.log('Sticker cell clicked:', cellData);
+    
+    // Log additional context for debugging
+    if (error) {
+      console.error('Current sticker data error:', error);
+    }
+    if (summary) {
+      console.log('Current sticker summary:', summary);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await refetch(true); // Force refresh
+    } catch (err) {
+      console.error('Error refreshing sticker data:', err);
+    }
   };
 
   return (
@@ -81,6 +88,23 @@ function StickerMatrixPage() {
           hasError={hasError}
           onCellClick={handleCellClick}
         />
+
+        {/* Debug information in development */}
+        {process.env.NODE_ENV === 'development' && summary && (
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm">
+            <h3 className="font-semibold mb-2">Debug Info:</h3>
+            <p>Total Owners: {summary.totalOwners}</p>
+            <p>Total Flats: {summary.totalFlats}</p>
+            <p>Assignment Rate: {summary.assignmentRate}%</p>
+            <p>Validation Errors: {validationErrors.length}</p>
+            <button 
+              onClick={handleRefresh}
+              className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-xs"
+            >
+              Force Refresh
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
