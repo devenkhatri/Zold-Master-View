@@ -100,21 +100,32 @@ const MatrixCell = React.forwardRef<HTMLDivElement, MatrixCellProps>(
     const isEmpty = variant === 'empty';
 
     const cellClasses = cn(
-      // Base styles
-      'relative min-h-[48px] min-w-[80px] p-2 border border-border',
-      'flex items-center justify-center text-sm font-medium',
+      // Base styles with improved mobile-first approach
+      'relative min-h-[44px] min-w-[70px] p-2 border border-border',
+      'flex items-center justify-center text-xs font-medium',
       'transition-all duration-200 ease-in-out',
       
-      // Responsive sizing
-      'sm:min-h-[52px] sm:min-w-[90px] sm:p-3',
-      'md:min-h-[56px] md:min-w-[100px] md:p-4',
+      // Progressive enhancement for larger screens
+      'sm:min-h-[48px] sm:min-w-[80px] sm:p-2.5 sm:text-sm',
+      'md:min-h-[52px] md:min-w-[90px] md:p-3 md:text-sm',
+      'lg:min-h-[56px] lg:min-w-[100px] lg:p-4 lg:text-base',
+      'xl:min-h-[60px] xl:min-w-[110px]',
       
-      // Interactive states
+      // Interactive states with enhanced touch support
       isInteractive && [
         'cursor-pointer',
-        'hover:shadow-md hover:scale-105',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        'active:scale-95'
+        // Desktop-only hover effects (avoid on touch devices)
+        'hover:shadow-md hover:scale-[1.02]',
+        // Enhanced focus states for accessibility
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        // Touch-optimized active states
+        'active:scale-95 active:shadow-inner active:bg-muted/50',
+        // Ensure minimum touch target size (44px recommended)
+        'min-h-[44px] min-w-[44px]',
+        // Prevent text selection and improve touch responsiveness
+        'select-none touch-manipulation',
+        // Reduce tap delay on mobile
+        '[-webkit-tap-highlight-color:transparent]'
       ],
       
       // Focus states

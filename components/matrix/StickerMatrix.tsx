@@ -6,9 +6,10 @@ import { Owner } from '@/types/property';
 import { useMatrixData, StickerMatrixData } from '@/hooks/useMatrixData';
 import { Matrix } from './Matrix';
 import { ExportButtons } from './ExportButtons';
+import { CollapsibleSection } from './CollapsibleSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, Users } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Users, Car, Grid3X3, BarChart3, Info } from 'lucide-react';
 
 export interface StickerMatrixProps {
   owners: Owner[];
@@ -100,174 +101,197 @@ const StickerMatrix: React.FC<StickerMatrixProps> = ({
 
   return (
     <div className={cn('w-full space-y-4', className)}>
-      {/* Header with statistics */}
-      <Card>
-        <CardHeader className="pb-3">
+      {/* Header with statistics - Enhanced for mobile */}
+      <CollapsibleSection
+        title="Car Sticker Assignment Matrix"
+        icon={<Car className="h-5 w-5" />}
+        defaultExpanded={true}
+        collapsibleOnMobile={false}
+        alwaysExpanded={true}
+      >
+        <div className="flex flex-col space-y-4">
+          {/* Controls and summary row - responsive layout */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-xl font-semibold">
-              Car Sticker Assignment Matrix
-            </CardTitle>
+            {/* Statistics - responsive layout */}
+            {!isLoading && !hasError && stickerData.blocks.length > 0 && (
+              <div className="flex flex-wrap gap-2 sm:gap-4 text-sm text-muted-foreground">
+                <span className="bg-muted/50 px-2 py-1 rounded text-xs sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
+                  {stickerData.blocks.length} blocks
+                </span>
+                <span className="bg-muted/50 px-2 py-1 rounded text-xs sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
+                  {stickerData.flats.length} flats
+                </span>
+                <span className="bg-primary/10 px-2 py-1 rounded text-xs font-medium text-primary sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm sm:text-foreground">
+                  {statistics.assignedFlats}/{statistics.totalFlats} assigned ({statistics.assignmentRate}%)
+                </span>
+                <span className="bg-muted/50 px-2 py-1 rounded text-xs sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
+                  {statistics.totalStickers} total stickers
+                </span>
+              </div>
+            )}
             
-            <ExportButtons
-              data={stickerData}
-              type="sticker"
-              disabled={isLoading || hasError || stickerData.blocks.length === 0}
-            />
+            {/* Export buttons - full width on mobile */}
+            <div className="w-full sm:w-auto">
+              <ExportButtons
+                data={stickerData}
+                type="sticker"
+                disabled={isLoading || hasError || stickerData.blocks.length === 0}
+                className="w-full sm:w-auto"
+              />
+            </div>
           </div>
-          
-          {/* Statistics */}
-          {!isLoading && !hasError && stickerData.blocks.length > 0 && (
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground pt-2">
-              <span>{stickerData.blocks.length} blocks</span>
-              <span>{stickerData.flats.length} flats</span>
-              <span className="font-medium text-foreground">
-                {statistics.assignedFlats}/{statistics.totalFlats} assigned ({statistics.assignmentRate}%)
-              </span>
-              <span>{statistics.totalStickers} total stickers</span>
-            </div>
-          )}
-        </CardHeader>
-      </Card>
-
-      {/* Statistics Cards */}
-      {!isLoading && !hasError && stickerData.blocks.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{statistics.assignedFlats}</div>
-                  <div className="text-sm text-muted-foreground">Assigned Flats</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="w-5 h-5 text-orange-600" />
-                <div>
-                  <div className="text-2xl font-bold text-orange-600">{statistics.unassignedFlats}</div>
-                  <div className="text-sm text-muted-foreground">Unassigned Flats</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{statistics.multipleStickersCount}</div>
-                  <div className="text-sm text-muted-foreground">Multiple Stickers</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-xs text-primary-foreground font-bold">%</span>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-primary">{statistics.assignmentRate}%</div>
-                  <div className="text-sm text-muted-foreground">Assignment Rate</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
+      </CollapsibleSection>
+
+      {/* Statistics Cards - Collapsible on mobile */}
+      {!isLoading && !hasError && stickerData.blocks.length > 0 && (
+        <CollapsibleSection
+          title="Assignment Statistics"
+          icon={<BarChart3 className="h-5 w-5" />}
+          defaultExpanded={false}
+          collapsibleOnMobile={true}
+        >
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">{statistics.assignedFlats}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Assigned Flats</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-xl sm:text-2xl font-bold text-orange-600">{statistics.unassignedFlats}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Unassigned Flats</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center space-x-2">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">{statistics.multipleStickersCount}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Multiple Stickers</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 bg-primary rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-xs text-primary-foreground font-bold">%</span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xl sm:text-2xl font-bold text-primary">{statistics.assignmentRate}%</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Assignment Rate</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CollapsibleSection>
       )}
 
-      {/* Matrix display */}
-      <Card>
-        <CardContent className="p-0">
-          <Matrix
-            data={{
-              blocks: stickerData.blocks,
-              flats: stickerData.flats,
-              cells: stickerData.cells
-            }}
-            type="sticker"
-            isLoading={isLoading}
-            hasError={hasError}
-            onCellClick={handleCellClick}
-            aria-label="Car Sticker Assignment Matrix"
-          />
-        </CardContent>
-      </Card>
+      {/* Matrix display - Enhanced responsive container */}
+      <CollapsibleSection
+        title="Sticker Assignment Matrix"
+        icon={<Grid3X3 className="h-5 w-5" />}
+        defaultExpanded={true}
+        collapsibleOnMobile={true}
+        contentClassName="p-0"
+      >
+        {/* Mobile scroll hint */}
+        <div className="block sm:hidden bg-muted/50 px-3 py-2 text-xs text-muted-foreground border-b border-border">
+          💡 Scroll horizontally to view all flats
+        </div>
+        
+        <Matrix
+          data={{
+            blocks: stickerData.blocks,
+            flats: stickerData.flats,
+            cells: stickerData.cells
+          }}
+          type="sticker"
+          isLoading={isLoading}
+          hasError={hasError}
+          onCellClick={handleCellClick}
+          aria-label="Car Sticker Assignment Matrix"
+        />
+      </CollapsibleSection>
 
-      {/* Unassigned Flats Summary */}
+      {/* Unassigned Flats Summary - Collapsible on mobile */}
       {!isLoading && !hasError && stickerData.unassignedFlats.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-orange-600" />
-              Unassigned Flats ({stickerData.unassignedFlats.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {stickerData.unassignedFlats.map((flatKey) => {
-                const [block, flat] = flatKey.split('-');
-                return (
-                  <Badge
-                    key={flatKey}
-                    variant="outline"
-                    className="border-orange-200 text-orange-700 bg-orange-50"
-                  >
-                    Block {block}, Flat {flat}
-                  </Badge>
-                );
-              })}
-            </div>
-            <div className="mt-3 text-sm text-muted-foreground">
-              These flats do not have any car stickers assigned. Click on individual cells for more details.
-            </div>
-          </CardContent>
-        </Card>
+        <CollapsibleSection
+          title={`Unassigned Flats (${stickerData.unassignedFlats.length})`}
+          icon={<AlertCircle className="w-5 h-5 text-orange-600" />}
+          defaultExpanded={false}
+          collapsibleOnMobile={true}
+        >
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            {stickerData.unassignedFlats.map((flatKey) => {
+              const [block, flat] = flatKey.split('-');
+              return (
+                <Badge
+                  key={flatKey}
+                  variant="outline"
+                  className="border-orange-200 text-orange-700 bg-orange-50 text-xs sm:text-sm hover:bg-orange-100 transition-colors"
+                >
+                  Block {block}, Flat {flat}
+                </Badge>
+              );
+            })}
+          </div>
+          <div className="mt-3 text-xs sm:text-sm text-muted-foreground">
+            These flats do not have any car stickers assigned. Click on individual cells for more details.
+          </div>
+        </CollapsibleSection>
       )}
 
-      {/* Multiple Stickers Summary */}
+      {/* Multiple Stickers Summary - Collapsible on mobile */}
       {!isLoading && !hasError && stickerData.multipleStickers.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              Flats with Multiple Stickers ({stickerData.multipleStickers.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {stickerData.multipleStickers.map((flatKey) => {
-                const [block, flat] = flatKey.split('-');
-                // Find the cell data to get sticker count
-                const blockIndex = stickerData.blocks.indexOf(block);
-                const flatIndex = stickerData.flats.indexOf(flat);
-                const cellData = stickerData.cells[blockIndex]?.[flatIndex];
-                const stickerCount = cellData?.metadata?.stickerCount || 0;
-                
-                return (
-                  <Badge
-                    key={flatKey}
-                    variant="outline"
-                    className="border-blue-200 text-blue-700 bg-blue-50"
-                  >
-                    Block {block}, Flat {flat} ({stickerCount} stickers)
-                  </Badge>
-                );
-              })}
-            </div>
-            <div className="mt-3 text-sm text-muted-foreground">
-              These flats have multiple car stickers assigned. Click on individual cells to view all sticker numbers.
-            </div>
-          </CardContent>
-        </Card>
+        <CollapsibleSection
+          title={`Flats with Multiple Stickers (${stickerData.multipleStickers.length})`}
+          icon={<Users className="w-5 h-5 text-blue-600" />}
+          defaultExpanded={false}
+          collapsibleOnMobile={true}
+        >
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            {stickerData.multipleStickers.map((flatKey) => {
+              const [block, flat] = flatKey.split('-');
+              // Find the cell data to get sticker count
+              const blockIndex = stickerData.blocks.indexOf(block);
+              const flatIndex = stickerData.flats.indexOf(flat);
+              const cellData = stickerData.cells[blockIndex]?.[flatIndex];
+              const stickerCount = cellData?.metadata?.stickerCount || 0;
+              
+              return (
+                <Badge
+                  key={flatKey}
+                  variant="outline"
+                  className="border-blue-200 text-blue-700 bg-blue-50 text-xs sm:text-sm hover:bg-blue-100 transition-colors"
+                >
+                  Block {block}, Flat {flat} ({stickerCount} stickers)
+                </Badge>
+              );
+            })}
+          </div>
+          <div className="mt-3 text-xs sm:text-sm text-muted-foreground">
+            These flats have multiple car stickers assigned. Click on individual cells to view all sticker numbers.
+          </div>
+        </CollapsibleSection>
       )}
 
       {/* No data state */}
@@ -286,32 +310,34 @@ const StickerMatrix: React.FC<StickerMatrixProps> = ({
         </Card>
       )}
 
-      {/* Legend */}
+      {/* Legend - Collapsible on mobile */}
       {!isLoading && !hasError && stickerData.blocks.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Legend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-background border border-border rounded"></div>
-                <span>Assigned sticker</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-muted border border-border rounded"></div>
-                <span>No sticker assigned</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded"></div>
-                <span>Multiple stickers</span>
-              </div>
+        <CollapsibleSection
+          title="Legend"
+          icon={<Info className="w-5 h-5" />}
+          defaultExpanded={false}
+          collapsibleOnMobile={true}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-background border border-border rounded shrink-0"></div>
+              <span>Assigned sticker</span>
             </div>
-            <div className="mt-3 text-xs text-muted-foreground">
-              Hover over cells to see detailed sticker information. Click cells to view additional details.
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-muted border border-border rounded shrink-0"></div>
+              <span>No sticker assigned</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded shrink-0"></div>
+              <span>Multiple stickers</span>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-muted-foreground">
+            <span className="hidden sm:inline">Hover over cells to see detailed sticker information. </span>
+            <span className="sm:hidden">Tap cells to view detailed sticker information. </span>
+            Click cells to view additional details.
+          </div>
+        </CollapsibleSection>
       )}
     </div>
   );

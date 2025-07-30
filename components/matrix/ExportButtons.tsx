@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Download, FileSpreadsheet, FileText } from 'lucide-react';
@@ -75,16 +76,30 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
           variant="outline"
           size="sm"
           disabled={disabled || isExporting}
-          className={className}
+          className={cn(
+            // Enhanced responsive sizing
+            "min-w-[100px] sm:min-w-[120px]",
+            // Better touch targets on mobile
+            "h-9 sm:h-8",
+            // Responsive text sizing
+            "text-xs sm:text-sm",
+            className
+          )}
         >
-          <Download className="w-4 h-4 mr-2" />
-          {isExporting ? 'Exporting...' : 'Export'}
+          <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          <span className="hidden xs:inline">
+            {isExporting ? 'Exporting...' : 'Export'}
+          </span>
+          <span className="xs:hidden">
+            {isExporting ? '...' : 'Export'}
+          </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem
           onClick={() => handleExport('csv')}
           disabled={isExporting}
+          className="text-sm"
         >
           <FileText className="w-4 h-4 mr-2" />
           Export as CSV
@@ -92,6 +107,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
         <DropdownMenuItem
           onClick={() => handleExport('excel')}
           disabled={isExporting}
+          className="text-sm"
         >
           <FileSpreadsheet className="w-4 h-4 mr-2" />
           Export as Excel

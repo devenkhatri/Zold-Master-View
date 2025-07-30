@@ -116,17 +116,45 @@ const Matrix: React.FC<MatrixProps> = ({
 
   return (
     <div className={cn('relative', className)}>
-      {/* Matrix container with horizontal scroll */}
+      {/* Matrix container with enhanced responsive scrolling */}
       <div 
         ref={matrixRef}
-        className="overflow-auto border border-border rounded-lg bg-background"
+        className={cn(
+          // Base scrolling styles with enhanced mobile support
+          "overflow-auto border border-border rounded-lg bg-background",
+          // Enhanced scrollbar styling for better UX
+          "scrollbar-thin scrollbar-track-muted/50 scrollbar-thumb-muted-foreground/30",
+          "hover:scrollbar-thumb-muted-foreground/50",
+          // Touch-friendly scrolling optimizations
+          "overscroll-contain scroll-smooth",
+          // Mobile-specific enhancements
+          "max-h-[70vh] sm:max-h-[80vh] lg:max-h-none",
+          // Improved touch scrolling momentum
+          "[-webkit-overflow-scrolling:touch]"
+        )}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         role="grid"
         aria-label={ariaLabel || `${type === 'amc' ? 'AMC Payment' : 'Car Sticker'} Matrix`}
+        // Enhanced touch-friendly attributes
+        style={{ 
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-x pan-y',
+          // Prevent zoom on double tap for better UX
+          WebkitTouchCallout: 'none',
+          userSelect: 'none'
+        } as React.CSSProperties}
       >
         <div 
-          className="grid gap-0 min-w-fit"
+          className={cn(
+            "grid gap-0",
+            // Enhanced responsive minimum width with better mobile support
+            "min-w-fit",
+            // Responsive width handling
+            "w-full sm:w-auto",
+            // Ensure matrix doesn't break on very small screens
+            "min-w-[320px]"
+          )}
           style={{ gridTemplateColumns }}
         >
           {/* Header row */}

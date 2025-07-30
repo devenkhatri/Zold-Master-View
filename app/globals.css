@@ -80,3 +80,108 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Enhanced scrollbar styles for matrix components */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-track-muted {
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+  
+  .scrollbar-thumb-muted-foreground\/20 {
+    scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+  }
+  
+  .scrollbar-thumb-muted-foreground\/30 {
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+  
+  .scrollbar-thumb-muted-foreground\/50 {
+    scrollbar-color: hsl(var(--muted-foreground) / 0.5) transparent;
+  }
+
+  /* Webkit scrollbar styles for better cross-browser support */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.5);
+    border-radius: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Touch-friendly utilities */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  /* Prevent tap highlight on mobile */
+  .-webkit-tap-highlight-color-transparent {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Enhanced mobile scrolling */
+  .-webkit-overflow-scrolling-touch {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Custom breakpoint utilities */
+  @media (max-width: 374px) {
+    .xs\:min-h-\[44px\] {
+      min-height: 44px;
+    }
+    
+    .xs\:min-w-\[70px\] {
+      min-width: 70px;
+    }
+    
+    .xs\:p-1\.5 {
+      padding: 0.375rem;
+    }
+    
+    .xs\:text-xs {
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+    
+    .xs\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    
+    .xs\:block {
+      display: block;
+    }
+    
+    .xs\:hidden {
+      display: none;
+    }
+    
+    .xs\:inline {
+      display: inline;
+    }
+  }
+
+  /* Pointer-based media queries for better touch device detection */
+  @media (pointer: coarse) {
+    .touch\:min-h-\[48px\] {
+      min-height: 48px;
+    }
+    
+    .touch\:min-w-\[80px\] {
+      min-width: 80px;
+    }
+  }
+}
