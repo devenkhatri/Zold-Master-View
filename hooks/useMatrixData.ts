@@ -87,7 +87,7 @@ const parseReceiptDate = (dateString: string): Date | null => {
 const getIndianFinancialYear = (date: Date): number => {
   const year = date.getFullYear();
   const month = date.getMonth(); // 0-based (0 = January, 3 = April)
-  
+
   // If month is April (3) or later, it belongs to the current year's financial year
   // If month is January (0) to March (2), it belongs to the previous year's financial year
   if (month >= 3) { // April to December
@@ -103,47 +103,47 @@ const extractBlocksAndFlats = (owners: Owner[]) => {
     if (!Array.isArray(owners)) {
       throw new Error('Owners data must be an array');
     }
-    
+
     const blockSet = new Set<string>();
     const flatSet = new Set<string>();
     const errors: string[] = [];
-    
+
     owners.forEach((owner, index) => {
       if (!owner) {
         errors.push(`Owner at index ${index} is null or undefined`);
         return;
       }
-      
+
       if (!owner.blockNumber || typeof owner.blockNumber !== 'string') {
         errors.push(`Owner at index ${index} has invalid block number: ${owner.blockNumber}`);
       } else {
         blockSet.add(owner.blockNumber);
       }
-      
+
       if (!owner.flatNumber || typeof owner.flatNumber !== 'string') {
         errors.push(`Owner at index ${index} has invalid flat number: ${owner.flatNumber}`);
       } else {
         flatSet.add(owner.flatNumber);
       }
     });
-    
+
     // Sort blocks and flats numerically with error handling
     const blocks = Array.from(blockSet).sort((a, b) => {
       const numA = parseInt(a) || 0;
       const numB = parseInt(b) || 0;
       return numA - numB;
     });
-    
+
     const flats = Array.from(flatSet).sort((a, b) => {
       const numA = parseInt(a) || 0;
       const numB = parseInt(b) || 0;
       return numA - numB;
     });
-    
+
     if (errors.length > 0) {
       console.warn('Data validation warnings in extractBlocksAndFlats:', errors);
     }
-    
+
     return { blocks, flats, errors };
   } catch (error) {
     console.error('Error in extractBlocksAndFlats:', error);
@@ -157,37 +157,37 @@ const extractAvailableYears = (receipts: Receipt[]): { years: number[]; errors: 
     if (!Array.isArray(receipts)) {
       throw new Error('Receipts data must be an array');
     }
-    
+
     const yearSet = new Set<number>();
     const errors: string[] = [];
-    
+
     receipts.forEach((receipt, index) => {
       if (!receipt) {
         errors.push(`Receipt at index ${index} is null or undefined`);
         return;
       }
-      
+
       if (!receipt.paymentDate) {
         errors.push(`Receipt at index ${index} has no payment date`);
         return;
       }
-      
+
       try {
         const date = parseReceiptDate(receipt.paymentDate);
         if (!date) {
           errors.push(`Receipt at index ${index} has invalid date format: ${receipt.paymentDate}`);
           return;
         }
-        
+
         // Get Indian financial year instead of calendar year
         const financialYear = getIndianFinancialYear(date);
-        
+
         if (isNaN(financialYear) || financialYear < 1900 || financialYear > new Date().getFullYear() + 10) {
           errors.push(`Receipt at index ${index} has invalid financial year: ${financialYear}`);
         } else {
           yearSet.add(financialYear);
         }
-        
+
         // Debug logging for financial year calculation
         if (receipt.blockNumber === 'G' && receipt.flatNumber === '104') {
           console.log(`📅 FY DEBUG: Receipt ${receipt.id} - Date: ${receipt.paymentDate}, Parsed Date: ${date.toISOString()}, Calendar Year: ${date.getFullYear()}, Month: ${date.getMonth() + 1}, Financial Year: ${financialYear}`);
@@ -196,15 +196,15 @@ const extractAvailableYears = (receipts: Receipt[]): { years: number[]; errors: 
         errors.push(`Receipt at index ${index} has invalid date format: ${receipt.paymentDate} - Error: ${dateError}`);
       }
     });
-    
+
     const years = Array.from(yearSet).sort((a, b) => b - a); // Sort descending (newest first)
-    
+
     if (errors.length > 0) {
       console.warn('Data validation warnings in extractAvailableYears:', errors);
     }
-    
+
     console.log(`📅 Available Indian Financial Years:`, years);
-    
+
     return { years, errors };
   } catch (error) {
     console.error('Error in extractAvailableYears:', error);
@@ -218,73 +218,73 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
     if (!Array.isArray(owners) || !Array.isArray(receipts)) {
       throw new Error('Invalid data: owners and receipts must be arrays');
     }
-    
+
     if (typeof selectedYear !== 'number' || isNaN(selectedYear)) {
       throw new Error(`Invalid selected year: ${selectedYear}`);
     }
-    
+
     const { blocks, flats, errors: extractionErrors } = extractBlocksAndFlats(owners);
     const { years: availableYears, errors: yearErrors } = extractAvailableYears(receipts);
-    
+
     // Log any data validation warnings
     const allErrors = [...(extractionErrors || []), ...(yearErrors || [])];
     if (allErrors.length > 0) {
       console.warn('Data validation warnings in processAmcData:', allErrors);
     }
-  
+
     // CRITICAL FIX: Filter receipts by Indian Financial Year (April to March)
     console.log(`🔧 STARTING INDIAN FY FILTER: Processing ${receipts.length} receipts for Financial Year ${selectedYear}-${(selectedYear + 1).toString().slice(-2)}`);
-    
+
     const yearReceipts = receipts.filter(receipt => {
       try {
         if (!receipt || !receipt.paymentDate) {
           console.warn('Receipt missing or has no payment date:', receipt);
           return false;
         }
-        
+
         // Parse the date using robust date parsing function
         const receiptDate = parseReceiptDate(receipt.paymentDate);
-        
+
         // Validate the parsed date
         if (!receiptDate) {
           console.warn(`❌ Invalid date format: ${receipt.paymentDate}`, receipt);
           return false;
         }
-        
+
         // CRITICAL: Get Indian Financial Year instead of calendar year
         const receiptFinancialYear = getIndianFinancialYear(receiptDate);
-        
+
         // Validate the financial year
         if (isNaN(receiptFinancialYear) || receiptFinancialYear < 1900 || receiptFinancialYear > new Date().getFullYear() + 10) {
           console.warn(`Invalid financial year calculated: ${receiptFinancialYear} from date ${receipt.paymentDate}`, receipt);
           return false;
         }
-        
+
         // CRITICAL: Compare financial years
         const isValidYear = receiptFinancialYear === selectedYear;
-        
+
         // Enhanced debug logging for critical blocks
         if (receipt.blockNumber === 'G' && receipt.flatNumber === '104') {
           const calendarYear = receiptDate.getFullYear();
           const month = receiptDate.getMonth() + 1;
           console.log(`🔍 G-104 FY FILTER: Date=${receipt.paymentDate}, Calendar Year=${calendarYear}, Month=${month}, Financial Year=${receiptFinancialYear}, Selected FY=${selectedYear}, Include=${isValidYear}, Amount=${receipt.paymentAmount}`);
         }
-        
+
         // Log filtered receipts for debugging
         if (!isValidYear && (receipt.blockNumber === 'G' || receipt.blockNumber === 'B')) {
           const calendarYear = receiptDate.getFullYear();
           console.log(`❌ FILTERED OUT: ${receipt.blockNumber}-${receipt.flatNumber} FY ${receiptFinancialYear} (Calendar ${calendarYear}) != Selected FY ${selectedYear}`);
         }
-        
+
         return isValidYear;
       } catch (error) {
         console.error('CRITICAL ERROR in financial year filtering:', error, receipt);
         return false;
       }
     });
-    
+
     console.log(`🔍 YEAR FILTER DEBUG: Filtered ${yearReceipts.length} receipts for year ${selectedYear} from ${receipts.length} total receipts`);
-    
+
     // Critical debugging: Log all receipts for G-104 to understand the issue
     const g104Receipts = receipts.filter(r => r.blockNumber === 'G' && r.flatNumber === '104');
     if (g104Receipts.length > 0) {
@@ -296,7 +296,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
         receiptNo: r.receiptNo
       })));
     }
-    
+
     const g104FilteredReceipts = yearReceipts.filter(r => r.blockNumber === 'G' && r.flatNumber === '104');
     console.log(`🏠 FILTERED G-104 RECEIPTS FOR YEAR ${selectedYear}:`, g104FilteredReceipts.map(r => ({
       id: r.id,
@@ -305,7 +305,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
       amount: r.paymentAmount,
       receiptNo: r.receiptNo
     })));
-    
+
     // Enhanced debugging for year filtering
     if (receipts.length > 0) {
       // Analyze both calendar and financial years in the data
@@ -325,7 +325,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
         }
         return acc;
       }, {} as Record<number, number>);
-      
+
       const financialYearAnalysis = receipts.reduce((acc, receipt) => {
         try {
           if (receipt.paymentDate) {
@@ -342,15 +342,15 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
         }
         return acc;
       }, {} as Record<number, number>);
-      
+
       console.log(`📅 Calendar Year distribution:`, calendarYearAnalysis);
       console.log(`📅 Financial Year distribution:`, financialYearAnalysis);
       console.log(`📅 Available Financial Years:`, Object.keys(financialYearAnalysis).map(Number).sort());
-      
+
       if (yearReceipts.length === 0) {
-        console.warn(`No receipts found for year ${selectedYear}. Year distribution:`, yearAnalysis);
+        console.warn(`No receipts found for year ${selectedYear}. Financial Year distribution:`, financialYearAnalysis);
       }
-      
+
       // Log specific examples for debugging with both calendar and financial years
       const exampleReceipts = receipts.slice(0, 5).map(r => ({
         id: r.id,
@@ -384,7 +384,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
       }));
       console.log(`📊 Example receipts (Calendar vs Financial Year):`, exampleReceipts);
     }
-  
+
     // CRITICAL VALIDATION: Double-check all filtered receipts are from correct financial year
     console.log(`🔍 FY VALIDATION: Checking ${yearReceipts.length} filtered receipts for Financial Year ${selectedYear}-${(selectedYear + 1).toString().slice(-2)}`);
     const invalidYearReceipts = yearReceipts.filter(receipt => {
@@ -393,7 +393,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
       const receiptFinancialYear = getIndianFinancialYear(receiptDate);
       return receiptFinancialYear !== selectedYear;
     });
-    
+
     if (invalidYearReceipts.length > 0) {
       console.error(`🚨 CRITICAL BUG DETECTED: ${invalidYearReceipts.length} receipts with wrong financial year passed through filter!`);
       invalidYearReceipts.forEach(receipt => {
@@ -426,7 +426,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
           console.warn(`Receipt at index ${index} missing block or flat number:`, receipt);
           return;
         }
-        
+
         // CRITICAL: Final financial year validation before adding to map
         const receiptDate = parseReceiptDate(receipt.paymentDate);
         if (!receiptDate) {
@@ -438,7 +438,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
           console.error(`🚨 FINAL FY VALIDATION FAILED: Receipt ${receipt.blockNumber}-${receipt.flatNumber} has FY ${receiptFinancialYear} but selected FY is ${selectedYear}`);
           return;
         }
-        
+
         const key = `${receipt.blockNumber}-${receipt.flatNumber}`;
         if (!receiptMap.has(key)) {
           receiptMap.set(key, []);
@@ -448,25 +448,25 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
         console.warn(`Error processing receipt at index ${index}:`, receipt, error);
       }
     });
-  
+
     // Create matrix cells with error handling
     const cells: MatrixCellData[][] = [];
     const totalByBlock: Record<string, number> = {};
     const totalByFlat: Record<string, number> = {};
-    
+
     // Initialize totals
     blocks.forEach(block => totalByBlock[block] = 0);
     flats.forEach(flat => totalByFlat[flat] = 0);
-    
+
     blocks.forEach((block, blockIndex) => {
       try {
         cells[blockIndex] = [];
-        
+
         flats.forEach((flat, flatIndex) => {
           try {
             const key = `${block}-${flat}`;
             const blockFlatReceipts = receiptMap.get(key) || [];
-            
+
             // Debug logging for specific block/flat combination
             if (block === 'G' && flat === '104') {
               console.log(`DEBUG: Processing Block G, Flat 104 - Found ${blockFlatReceipts.length} receipts for year ${selectedYear}:`, blockFlatReceipts);
@@ -475,7 +475,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
                 console.log(`  Receipt ${idx}: ID=${receipt.id}, Year=${receiptYear}, Amount=${receipt.paymentAmount}, Date=${receipt.paymentDate}`);
               });
             }
-            
+
             // Calculate total payment amount for this block/flat combination with error handling
             const totalAmount = blockFlatReceipts.reduce((sum, receipt) => {
               try {
@@ -490,7 +490,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
                 return sum;
               }
             }, 0);
-            
+
             // CRITICAL: Get the most recent payment for metadata with strict year validation
             let latestReceipt: Receipt | undefined;
             try {
@@ -510,11 +510,11 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
                 }
                 return isValid;
               });
-              
+
               if (validYearReceipts.length !== blockFlatReceipts.length) {
                 console.error(`🚨 CRITICAL: Found ${blockFlatReceipts.length - validYearReceipts.length} receipts with wrong year for ${block}-${flat}`);
               }
-              
+
               latestReceipt = validYearReceipts
                 .filter(receipt => receipt.paymentDate)
                 .sort((a, b) => {
@@ -525,7 +525,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
                     return 0;
                   }
                 })[0];
-                
+
               // Final validation of latest receipt using financial year
               if (latestReceipt) {
                 const latestDate = parseReceiptDate(latestReceipt.paymentDate);
@@ -544,7 +544,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
             } catch (error) {
               console.warn('Error finding latest receipt:', blockFlatReceipts, error);
             }
-            
+
             const cell: MatrixCellData = {
               blockNumber: block,
               flatNumber: flat,
@@ -554,7 +554,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
                 receiptNumber: latestReceipt.receiptNo,
               } : undefined
             };
-            
+
             // Debug logging for specific block/flat combination
             if (block === 'G' && flat === '104') {
               console.log(`🎯 CELL CREATION DEBUG: Created cell for Block G, Flat 104:`, cell);
@@ -568,9 +568,9 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
                 }
               }
             }
-            
+
             cells[blockIndex][flatIndex] = cell;
-            
+
             // Update totals
             if (totalAmount > 0) {
               totalByBlock[block] += totalAmount;
@@ -596,7 +596,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
         }));
       }
     });
-    
+
     // Final validation: Ensure all cell data is from the selected year
     let validationErrors = 0;
     cells.forEach((blockRow, blockIndex) => {
@@ -622,7 +622,7 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
         }
       });
     });
-    
+
     if (validationErrors > 0) {
       console.error(`Found ${validationErrors} validation errors in matrix data for Financial Year ${selectedYear}-${(selectedYear + 1).toString().slice(-2)}`);
     } else {
@@ -650,14 +650,14 @@ const processStickerData = (owners: Owner[]): StickerMatrixData => {
     if (!Array.isArray(owners)) {
       throw new Error('Invalid data: owners must be an array');
     }
-    
+
     const { blocks, flats, errors: extractionErrors } = extractBlocksAndFlats(owners);
-    
+
     // Log any data validation warnings
     if (extractionErrors && extractionErrors.length > 0) {
       console.warn('Data validation warnings in processStickerData:', extractionErrors);
     }
-  
+
     // Group owners by block and flat with error handling
     const ownerMap = new Map<string, Owner[]>();
     owners.forEach((owner, index) => {
@@ -666,7 +666,7 @@ const processStickerData = (owners: Owner[]): StickerMatrixData => {
           console.warn(`Owner at index ${index} missing block or flat number:`, owner);
           return;
         }
-        
+
         const key = `${owner.blockNumber}-${owner.flatNumber}`;
         if (!ownerMap.has(key)) {
           ownerMap.set(key, []);
@@ -676,21 +676,21 @@ const processStickerData = (owners: Owner[]): StickerMatrixData => {
         console.warn(`Error processing owner at index ${index}:`, owner, error);
       }
     });
-  
+
     // Create matrix cells with error handling
     const cells: MatrixCellData[][] = [];
     const unassignedFlats: string[] = [];
     const multipleStickers: string[] = [];
-    
+
     blocks.forEach((block, blockIndex) => {
       try {
         cells[blockIndex] = [];
-        
+
         flats.forEach((flat, flatIndex) => {
           try {
             const key = `${block}-${flat}`;
             const blockFlatOwners = ownerMap.get(key) || [];
-            
+
             // Collect all sticker numbers for this block/flat with error handling
             const allStickers: string[] = [];
             blockFlatOwners.forEach((owner, ownerIndex) => {
@@ -707,7 +707,7 @@ const processStickerData = (owners: Owner[]): StickerMatrixData => {
                 console.warn(`Error processing sticker numbers for owner ${ownerIndex} in ${key}:`, owner, error);
               }
             });
-            
+
             // Remove duplicates and sort with error handling
             let uniqueStickers: string[] = [];
             try {
@@ -716,12 +716,12 @@ const processStickerData = (owners: Owner[]): StickerMatrixData => {
               console.warn(`Error processing unique stickers for ${key}:`, allStickers, error);
               uniqueStickers = allStickers; // Fallback to unsorted list
             }
-            
+
             const flatKey = `${block}-${flat}`;
-            
+
             let cellValue: string | null = null;
             let stickerCount = 0;
-            
+
             if (uniqueStickers.length === 0) {
               unassignedFlats.push(flatKey);
               cellValue = null;
@@ -733,7 +733,7 @@ const processStickerData = (owners: Owner[]): StickerMatrixData => {
               cellValue = uniqueStickers.join(', ');
               stickerCount = uniqueStickers.length;
             }
-            
+
             const cell: MatrixCellData = {
               blockNumber: block,
               flatNumber: flat,
@@ -742,7 +742,7 @@ const processStickerData = (owners: Owner[]): StickerMatrixData => {
                 stickerCount
               }
             };
-            
+
             cells[blockIndex][flatIndex] = cell;
           } catch (error) {
             console.error(`Error processing cell for block ${block}, flat ${flat}:`, error);
@@ -766,7 +766,7 @@ const processStickerData = (owners: Owner[]): StickerMatrixData => {
         }));
       }
     });
-    
+
     return {
       blocks,
       flats,
@@ -792,7 +792,7 @@ export const useMatrixData = (owners: Owner[], receipts: Receipt[]) => {
       return [];
     }
   }, [receipts]);
-  
+
   // Process AMC data for a specific year with error handling
   const processAmcDataForYear = useMemo(() => {
     return (year: number): AmcMatrixData => {
@@ -813,7 +813,7 @@ export const useMatrixData = (owners: Owner[], receipts: Receipt[]) => {
       }
     };
   }, [owners, receipts]);
-  
+
   // Process sticker data with error handling
   const stickerMatrixData = useMemo((): StickerMatrixData => {
     try {
@@ -830,7 +830,7 @@ export const useMatrixData = (owners: Owner[], receipts: Receipt[]) => {
       };
     }
   }, [owners]);
-  
+
   return {
     availableYears,
     processAmcDataForYear,
