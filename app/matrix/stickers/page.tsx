@@ -36,25 +36,34 @@ function StickerMatrixPage() {
 
   if (!isMounted) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+        {/* Enhanced Loading Header */}
+        <div className="bg-gradient-to-r from-purple-600 via-purple-700 to-pink-700 text-white shadow-xl">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Car className="h-6 w-6 sm:h-8 sm:w-8 text-white shrink-0" />
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <Car className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                </div>
                 <div className="min-w-0">
-                  <h1 className="text-lg sm:text-2xl font-bold truncate">Car Sticker Assignment Matrix</h1>
+                  <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Car Sticker Assignment Matrix</h1>
+                  <p className="text-purple-100 text-sm sm:text-base mt-1 hidden sm:block">
+                    Manage and track vehicle sticker assignments by block and flat
+                  </p>
                 </div>
               </div>
-              <Navigation />
+              <Navigation variant="auto" />
             </div>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
-          <div className="flex items-center justify-center p-8">
+        
+        {/* Loading Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading Sticker Matrix...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 border-t-purple-600 mx-auto mb-6"></div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Loading Sticker Matrix</h2>
+              <p className="text-gray-600">Please wait while we fetch your sticker data...</p>
             </div>
           </div>
         </div>
@@ -63,28 +72,37 @@ function StickerMatrixPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+      {/* Enhanced Professional Header */}
+      <header className="bg-gradient-to-r from-purple-600 via-purple-700 to-pink-700 text-white shadow-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Car className="h-6 w-6 sm:h-8 sm:w-8 text-white shrink-0" />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                <Car className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+              </div>
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-2xl font-bold truncate">Car Sticker Assignment Matrix</h1>
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Car Sticker Assignment Matrix</h1>
+                <p className="text-purple-100 text-sm sm:text-base mt-1 hidden sm:block">
+                  Manage and track vehicle sticker assignments by block and flat
+                </p>
               </div>
             </div>
-            <Navigation />
+            <Navigation variant="auto" />
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <ClientOnly
           fallback={
-            <div className="flex items-center justify-center p-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading Sticker Matrix...</p>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 border-t-purple-600 mx-auto mb-6"></div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-2">Loading Sticker Matrix</h2>
+                  <p className="text-gray-600">Preparing your sticker data...</p>
+                </div>
               </div>
             </div>
           }
@@ -103,7 +121,7 @@ function StickerMatrixPage() {
             />
           </MatrixErrorBoundary>
         </ClientOnly>
-      </div>
+      </main>
     </div>
   );
 }
