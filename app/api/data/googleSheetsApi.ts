@@ -13,11 +13,11 @@ if (!isServer) {
 export function getEnvVariable(key: string, fallback: string = ''): string {
   // This will only run on the server where env vars are available
   const value = process.env[key] || process.env[`NEXT_PUBLIC_${key}`];
-  
+
   if (!value && !fallback) {
     console.warn(`Environment variable ${key} is not set`);
   }
-  
+
   return value || fallback;
 }
 
@@ -40,10 +40,17 @@ const MASTERDATA_RANGE = getEnvVariable('GOOGLE_SHEETS_MASTERDATA_RANGE', 'Maste
 const receiptsSheetsStr = getEnvVariable('GOOGLE_SHEETS_RECEIPTS_SHEETS', '');
 const RECEIPTS_SHEETS = receiptsSheetsStr ? receiptsSheetsStr.split(',').map(s => s.trim()) : [];
 
+// AMC-specific receipt sheets (filter for AMC receipts only)
+const AMC_RECEIPTS_SHEETS = RECEIPTS_SHEETS.filter(sheet =>
+  sheet.toLowerCase().includes('amc') ||
+  sheet.toLowerCase().includes('maintenance')
+);
+
 // console.log('[googleSheetsApi] Configured with:', {
 //   ownersRange: OWNERS_RANGE,
 //   masterDataRange: MASTERDATA_RANGE,
-//   receiptsSheets: RECEIPTS_SHEETS
+//   allReceiptsSheets: RECEIPTS_SHEETS,
+//   amcReceiptsSheets: AMC_RECEIPTS_SHEETS
 // });
 
 // Enhanced error handling for Google Sheets API
@@ -51,7 +58,7 @@ class GoogleSheetsApiError extends Error {
   status: number;
   code: string;
   retryable: boolean;
-  
+
   constructor(message: string, status: number = 500, code: string = 'SHEETS_API_ERROR', retryable: boolean = false) {
     super(message);
     this.status = status;
@@ -82,7 +89,7 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retryCount
         ...options.headers
       }
     });
-    
+
     // Handle rate limiting with exponential backoff
     if (response.status === 429) {
       if (retryCount < RETRY_CONFIG.maxRetries) {
@@ -90,12 +97,12 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retryCount
           RETRY_CONFIG.baseDelay * Math.pow(RETRY_CONFIG.backoffMultiplier, retryCount),
           RETRY_CONFIG.maxDelay
         );
-        
+
         console.warn(`Rate limited, retrying in ${delay}ms (attempt ${retryCount + 1}/${RETRY_CONFIG.maxRetries})`);
         await sleep(delay);
         return fetchWithRetry(url, options, retryCount + 1);
       }
-      
+
       throw new GoogleSheetsApiError(
         'Google Sheets API rate limit exceeded',
         429,
@@ -103,7 +110,7 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retryCount
         false
       );
     }
-    
+
     // Handle temporary server errors with retry
     if (response.status >= 500 && response.status < 600) {
       if (retryCount < RETRY_CONFIG.maxRetries) {
@@ -111,12 +118,12 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retryCount
           RETRY_CONFIG.baseDelay * Math.pow(RETRY_CONFIG.backoffMultiplier, retryCount),
           RETRY_CONFIG.maxDelay
         );
-        
+
         console.warn(`Server error ${response.status}, retrying in ${delay}ms (attempt ${retryCount + 1}/${RETRY_CONFIG.maxRetries})`);
         await sleep(delay);
         return fetchWithRetry(url, options, retryCount + 1);
       }
-      
+
       throw new GoogleSheetsApiError(
         `Google Sheets API server error: ${response.status}`,
         response.status,
@@ -124,9 +131,9 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retryCount
         false
       );
     }
-    
+
     return response;
-    
+
   } catch (error) {
     // Handle network errors with retry
     if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -135,12 +142,12 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retryCount
           RETRY_CONFIG.baseDelay * Math.pow(RETRY_CONFIG.backoffMultiplier, retryCount),
           RETRY_CONFIG.maxDelay
         );
-        
+
         console.warn(`Network error, retrying in ${delay}ms (attempt ${retryCount + 1}/${RETRY_CONFIG.maxRetries})`);
         await sleep(delay);
         return fetchWithRetry(url, options, retryCount + 1);
       }
-      
+
       throw new GoogleSheetsApiError(
         'Network error connecting to Google Sheets API',
         0,
@@ -148,7 +155,7 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retryCount
         true
       );
     }
-    
+
     throw error;
   }
 }
@@ -158,7 +165,7 @@ export async function fetchSheet(range: string): Promise<any[][]> {
   try {
     // console.log("Fetching sheet with range:", range);
     // console.log("Using Sheet ID:", SHEET_ID ? '***' + SHEET_ID.slice(-4) : 'MISSING');
-    
+
     if (!API_KEY) {
       throw new GoogleSheetsApiError(
         'Google Sheets API key not configured',
@@ -167,7 +174,7 @@ export async function fetchSheet(range: string): Promise<any[][]> {
         false
       );
     }
-    
+
     if (!SHEET_ID) {
       throw new GoogleSheetsApiError(
         'Google Sheet ID not configured',
@@ -176,7 +183,7 @@ export async function fetchSheet(range: string): Promise<any[][]> {
         false
       );
     }
-    
+
     if (!range) {
       throw new GoogleSheetsApiError(
         'Sheet range not specified',
@@ -185,13 +192,13 @@ export async function fetchSheet(range: string): Promise<any[][]> {
         false
       );
     }
-    
+
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?key=${API_KEY}`;
     // console.log("Request URL:", url.replace(API_KEY, '***'));
-    
+
     const res = await fetchWithRetry(url);
     const responseText = await res.text();
-    
+
     if (!res.ok) {
       console.error('Google Sheets API Error:', {
         status: res.status,
@@ -199,7 +206,7 @@ export async function fetchSheet(range: string): Promise<any[][]> {
         response: responseText.substring(0, 500), // Limit response text for logging
         url: url.replace(API_KEY, '***')
       });
-      
+
       // Handle specific error cases
       if (res.status === 400) {
         throw new GoogleSheetsApiError(
@@ -209,7 +216,7 @@ export async function fetchSheet(range: string): Promise<any[][]> {
           false
         );
       }
-      
+
       if (res.status === 403) {
         throw new GoogleSheetsApiError(
           'Access denied to Google Sheets. Check API key permissions.',
@@ -218,7 +225,7 @@ export async function fetchSheet(range: string): Promise<any[][]> {
           false
         );
       }
-      
+
       if (res.status === 404) {
         throw new GoogleSheetsApiError(
           'Google Sheet not found. Check Sheet ID and range.',
@@ -227,7 +234,7 @@ export async function fetchSheet(range: string): Promise<any[][]> {
           false
         );
       }
-      
+
       throw new GoogleSheetsApiError(
         `Failed to fetch sheet (${res.status}): ${res.statusText}`,
         res.status,
@@ -235,7 +242,7 @@ export async function fetchSheet(range: string): Promise<any[][]> {
         res.status >= 500
       );
     }
-    
+
     let data;
     try {
       data = JSON.parse(responseText);
@@ -247,9 +254,9 @@ export async function fetchSheet(range: string): Promise<any[][]> {
         true
       );
     }
-    
+
     return data.values || [];
-    
+
   } catch (error) {
     console.error('Error in fetchSheet:', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -258,12 +265,12 @@ export async function fetchSheet(range: string): Promise<any[][]> {
       hasApiKey: !!API_KEY,
       errorType: error instanceof GoogleSheetsApiError ? error.code : 'UNKNOWN'
     });
-    
+
     // Re-throw GoogleSheetsApiError as-is
     if (error instanceof GoogleSheetsApiError) {
       throw error;
     }
-    
+
     // Wrap other errors
     throw new GoogleSheetsApiError(
       `Unexpected error fetching sheet: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -278,8 +285,8 @@ export async function fetchOwners(): Promise<Owner[]> {
   const rows = await fetchSheet(OWNERS_RANGE);
   const [header, ...dataRows] = rows;
   return dataRows.map(row => ({
-    id: row[0]+row[1]+row[2],
-    isOwner: row[2],    
+    id: row[0] + row[1] + row[2],
+    isOwner: row[2],
     memberName: row[3],
     mobile1: row[4],
     mobile2: row[5],
@@ -299,7 +306,7 @@ export async function fetchMasterData() {
   const blockSet = new Set<string>();
   const blockToFlats: Record<string, Set<string>> = {};
   let lastUpdated = '';
-  
+
   // Find the last row with a date in column C (index 2)
   for (let i = dataRows.length - 1; i >= 0; i--) {
     const row = dataRows[i];
@@ -318,33 +325,34 @@ export async function fetchMasterData() {
       if (flat) blockToFlats[block].add(flat);
     }
   }
-  
+
   const blockOptions = Array.from(blockSet).sort();
   const getFlatOptions = (blockNumber: string): string[] => {
     return blockToFlats[blockNumber] ? Array.from(blockToFlats[blockNumber]).sort() : [];
   };
-  
-  return { 
-    blockOptions, 
-    getFlatOptions, 
-    lastUpdated: lastUpdated || null 
+
+  return {
+    blockOptions,
+    getFlatOptions,
+    lastUpdated: lastUpdated || null
   };
 }
 
-export async function fetchReceipts(): Promise<Receipt[]> {
-  if (!RECEIPTS_SHEETS.length) {
-    console.warn('No receipt sheets configured');
+// Fetch receipts from specific sheets
+async function fetchReceiptsFromSheets(sheetsToFetch: string[], sheetType: string = 'receipt'): Promise<Receipt[]> {
+  if (!sheetsToFetch.length) {
+    console.warn(`No ${sheetType} sheets configured`);
     return [];
   }
-  
+
   let allRows: any[][] = [];
   const sheetErrors: string[] = [];
-  
-  for (const sheetName of RECEIPTS_SHEETS) {
+
+  for (const sheetName of sheetsToFetch) {
     try {
-      console.log(`Fetching receipts from sheet: ${sheetName}`);
+      console.log(`Fetching ${sheetType}s from sheet: ${sheetName}`);
       const rows = await fetchSheet(`${sheetName}!A1:N1000`); // N = 14 columns
-      
+
       if (rows.length > 1) {
         allRows = allRows.concat(rows.slice(1)); // skip header
         console.log(`Fetched ${rows.length - 1} rows from ${sheetName}`);
@@ -355,27 +363,27 @@ export async function fetchReceipts(): Promise<Receipt[]> {
       const errorMsg = `Failed to fetch from sheet ${sheetName}: ${error instanceof Error ? error.message : 'Unknown error'}`;
       console.error(errorMsg);
       sheetErrors.push(errorMsg);
-      
+
       // Continue with other sheets instead of failing completely
       continue;
     }
   }
-  
+
   // If all sheets failed, throw an error
-  if (sheetErrors.length === RECEIPTS_SHEETS.length) {
+  if (sheetErrors.length === sheetsToFetch.length) {
     throw new GoogleSheetsApiError(
-      `Failed to fetch from all receipt sheets: ${sheetErrors.join('; ')}`,
+      `Failed to fetch from all ${sheetType} sheets: ${sheetErrors.join('; ')}`,
       500,
       'ALL_SHEETS_FAILED',
       true
     );
   }
-  
+
   // Log partial failures
   if (sheetErrors.length > 0) {
-    console.warn(`Partial failure fetching receipts: ${sheetErrors.length}/${RECEIPTS_SHEETS.length} sheets failed`);
+    console.warn(`Partial failure fetching ${sheetType}s: ${sheetErrors.length}/${sheetsToFetch.length} sheets failed`);
   }
-  
+
   // Columns: Receipt No, Receipt Date, Block No, Flat No, Name, Mode, Payment Amount, Payment No, Payment Date, Payment Bank, Remarks, PDF Status, PDF URL, PDF Name
   const receipts = allRows.map((row, idx) => {
     // Enhanced data validation and transformation
@@ -393,7 +401,7 @@ export async function fetchReceipts(): Promise<Receipt[]> {
     const pdfStatus = row[11] ? String(row[11]).trim() : '';
     const pdfUrl = row[12] ? String(row[12]).trim() : '';
     const pdfName = row[13] ? String(row[13]).trim() : '';
-    
+
     return {
       id: `${receiptNo}_${blockNumber}_${flatNumber}_${idx}`,
       receiptNo,
@@ -413,15 +421,50 @@ export async function fetchReceipts(): Promise<Receipt[]> {
     };
   }).filter(receipt => {
     // Filter out invalid receipts
-    return receipt.receiptNo && 
-           receipt.blockNumber && 
-           receipt.flatNumber && 
-           receipt.paymentAmount > 0 &&
-           receipt.paymentDate;
+    return receipt.receiptNo &&
+      receipt.blockNumber &&
+      receipt.flatNumber &&
+      receipt.paymentAmount > 0 &&
+      receipt.paymentDate;
   });
-  
-  console.log(`Successfully processed ${receipts.length} valid receipts from ${allRows.length} total rows`);
+
+  console.log(`Successfully processed ${receipts.length} valid ${sheetType}s from ${allRows.length} total rows`);
   return receipts;
+}
+
+// Fetch all receipts (for backward compatibility)
+export async function fetchReceipts(): Promise<Receipt[]> {
+  return fetchReceiptsFromSheets(RECEIPTS_SHEETS, 'receipt');
+}
+
+// Fetch only AMC receipts
+export async function fetchAmcReceipts(): Promise<Receipt[]> {
+  console.log('Fetching AMC receipts only from sheets:', AMC_RECEIPTS_SHEETS);
+
+  if (AMC_RECEIPTS_SHEETS.length === 0) {
+    console.warn('No AMC receipt sheets found. Falling back to filtering all receipts by receipt number pattern.');
+
+    // Fallback: fetch all receipts and filter by AMC pattern
+    const allReceipts = await fetchReceiptsFromSheets(RECEIPTS_SHEETS, 'receipt');
+
+    // Filter receipts that look like AMC receipts (you may need to adjust this pattern)
+    const amcReceipts = allReceipts.filter(receipt => {
+      const receiptNo = receipt.receiptNo.toLowerCase();
+      const remarks = receipt.remarks.toLowerCase();
+
+      // Filter for AMC-related receipts based on receipt number or remarks
+      return receiptNo.includes('amc') ||
+        receiptNo.includes('maintenance') ||
+        remarks.includes('amc') ||
+        remarks.includes('maintenance') ||
+        remarks.includes('annual maintenance');
+    });
+
+    console.log(`Filtered ${amcReceipts.length} AMC receipts from ${allReceipts.length} total receipts`);
+    return amcReceipts;
+  }
+
+  return fetchReceiptsFromSheets(AMC_RECEIPTS_SHEETS, 'AMC receipt');
 }
 
 // Export config object with all necessary variables
@@ -430,5 +473,6 @@ export const config = {
   SHEET_ID,
   OWNERS_RANGE,
   MASTERDATA_RANGE,
-  RECEIPTS_SHEETS
+  RECEIPTS_SHEETS,
+  AMC_RECEIPTS_SHEETS
 };

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchReceipts, fetchOwners } from '../data/googleSheetsApi';
+import { fetchAmcReceipts, fetchOwners } from '../data/googleSheetsApi';
 import { Receipt, Owner } from '@/types/property';
 
 // Cache configuration
@@ -14,7 +14,7 @@ let cachedData: {
 class AmcApiError extends Error {
   status: number;
   code: string;
-  
+
   constructor(message: string, status: number = 500, code: string = 'AMC_API_ERROR') {
     super(message);
     this.status = status;
@@ -61,14 +61,14 @@ function transformAmcData(receipts: any[], owners: any[]) {
         errors.push(`Receipt ${index}: Invalid payment amount`);
         return;
       }
-      
+
       // Validate date format
       const paymentDate = new Date(receipt.paymentDate);
       if (isNaN(paymentDate.getTime())) {
         errors.push(`Receipt ${index}: Invalid payment date format`);
         return;
       }
-      
+
       validatedReceipts.push(receipt);
     } else {
       errors.push(`Receipt ${index}: Invalid receipt data structure`);
@@ -101,14 +101,14 @@ function isCacheValid(): boolean {
 async function fetchFreshAmcData() {
   try {
     console.log('Fetching fresh AMC data from Google Sheets...');
-    
+
     const [receipts, owners] = await Promise.all([
-      fetchReceipts().catch(error => {
-        console.error('Error fetching receipts for AMC:', error);
+      fetchAmcReceipts().catch(error => {
+        console.error('Error fetching AMC receipts:', error);
         throw new AmcApiError(
-          `Failed to fetch receipt data: ${error.message}`,
+          `Failed to fetch AMC receipt data: ${error.message}`,
           500,
-          'RECEIPTS_FETCH_ERROR'
+          'AMC_RECEIPTS_FETCH_ERROR'
         );
       }),
       fetchOwners().catch(error => {
@@ -122,7 +122,7 @@ async function fetchFreshAmcData() {
     ]);
 
     // Transform and validate the data
-    const { receipts: validatedReceipts, owners: validatedOwners, validationErrors } = 
+    const { receipts: validatedReceipts, owners: validatedOwners, validationErrors } =
       transformAmcData(receipts, owners);
 
     // Log validation results
@@ -148,11 +148,11 @@ async function fetchFreshAmcData() {
 
   } catch (error) {
     console.error('Error fetching fresh AMC data:', error);
-    
+
     if (error instanceof AmcApiError) {
       throw error;
     }
-    
+
     throw new AmcApiError(
       `Unexpected error fetching AMC data: ${error instanceof Error ? error.message : 'Unknown error'}`,
       500,
@@ -166,7 +166,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const forceRefresh = searchParams.get('refresh') === 'true';
-    
+
     console.log('AMC API endpoint called', { forceRefresh, cacheValid: isCacheValid() });
 
     let amcData;
@@ -224,12 +224,12 @@ export async function GET(request: Request) {
 
   } catch (error) {
     console.error('Error in AMC API route:', error);
-    
+
     // Handle different types of errors
     if (error instanceof AmcApiError) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: error.message,
           code: error.code,
           timestamp: new Date().toISOString()
@@ -237,12 +237,12 @@ export async function GET(request: Request) {
         { status: error.status }
       );
     }
-    
+
     // Handle authentication/authorization errors
     if (error instanceof Error && error.message.includes('API key')) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Google Sheets API authentication failed',
           code: 'AUTH_ERROR',
           timestamp: new Date().toISOString()
@@ -254,8 +254,8 @@ export async function GET(request: Request) {
     // Handle rate limiting errors
     if (error instanceof Error && error.message.includes('quota')) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Google Sheets API quota exceeded. Please try again later.',
           code: 'QUOTA_EXCEEDED',
           timestamp: new Date().toISOString()
@@ -263,11 +263,11 @@ export async function GET(request: Request) {
         { status: 429 }
       );
     }
-    
+
     // Default error response
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
         code: 'INTERNAL_SERVER_ERROR',
         timestamp: new Date().toISOString()
@@ -281,33 +281,33 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     if (body.action === 'clearCache') {
       cachedData = null;
       console.log('AMC data cache cleared manually');
-      
+
       return NextResponse.json({
         success: true,
         message: 'Cache cleared successfully',
         timestamp: new Date().toISOString()
       });
     }
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Invalid action',
         code: 'INVALID_ACTION'
       },
       { status: 400 }
     );
-    
+
   } catch (error) {
     console.error('Error in AMC API POST route:', error);
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Failed to process request',
         code: 'REQUEST_ERROR'
       },

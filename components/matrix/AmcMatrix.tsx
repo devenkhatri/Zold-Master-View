@@ -338,26 +338,7 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
               aria-label={`AMC Payment Matrix for ${selectedYear}`}
             />
 
-            {/* Totals overlay - Hidden on mobile for better UX */}
-            {!isLoading && !hasError && amcData.blocks.length > 0 && (
-              <div className="hidden lg:block absolute top-0 right-0 bg-background border-l border-b border-border">
-                {/* Column totals header */}
-                <div className="sticky top-0 z-10 bg-muted border-b border-border p-3 font-semibold text-center min-w-[100px]">
-                  Total
-                </div>
 
-                {/* Row totals */}
-                {amcData.blocks.map((block) => (
-                  <div
-                    key={`total-${block}`}
-                    className="border-b border-border p-3 text-center font-medium bg-muted/50 min-h-[44px] sm:min-h-[48px] md:min-h-[52px] lg:min-h-[56px] flex items-center justify-center"
-                    title={`Total for Block ${block}: ${formatCurrency(amcData.totalByBlock[block] || 0)}`}
-                  >
-                    {formatCurrency(amcData.totalByBlock[block] || 0)}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </CollapsibleSection>
 

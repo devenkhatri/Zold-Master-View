@@ -62,11 +62,11 @@ const Matrix: React.FC<MatrixProps> = ({
     setTooltipPosition(null);
   }, []);
 
-  // Generate grid template columns based on number of flats with better overflow handling
+  // Generate grid template columns with enhanced sizing for better desktop experience
   const gridTemplateColumns = React.useMemo(() => {
-    const headerWidth = '80px'; // Width for block headers
-    // Use fixed max width to prevent overflow while maintaining minimum usability
-    const cellWidth = 'minmax(80px, 120px)';
+    const headerWidth = '100px'; // Wider header for better readability
+    // Enhanced cell width for better desktop visibility
+    const cellWidth = 'minmax(120px, 160px)';
     return `${headerWidth} repeat(${data.flats.length}, ${cellWidth})`;
   }, [data.flats.length]);
 
@@ -192,34 +192,34 @@ const Matrix: React.FC<MatrixProps> = ({
           )}
           style={{ gridTemplateColumns }}
         >
-          {/* Header row */}
-          <div className="sticky top-0 left-0 z-20 bg-muted border-b border-r border-border p-3 font-semibold text-center overflow-hidden">
-            <span className="truncate block text-xs sm:text-sm">Block / Flat</span>
+          {/* Enhanced header row */}
+          <div className="sticky top-0 left-0 z-20 bg-gray-100 border-b-2 border-r-2 border-gray-300 p-4 font-bold text-center overflow-hidden shadow-sm">
+            <span className="truncate block text-sm sm:text-base text-gray-700">Block / Flat</span>
           </div>
           
           {data.flats.map((flat) => (
             <div
               key={flat}
-              className="sticky top-0 z-10 bg-muted border-b border-border p-3 font-semibold text-center min-w-[80px] max-w-[120px] overflow-hidden"
+              className="sticky top-0 z-10 bg-gray-100 border-b-2 border-gray-300 p-4 font-bold text-center min-w-[120px] max-w-[160px] overflow-hidden shadow-sm"
               role="columnheader"
               aria-label={`Flat ${flat}`}
               title={flat}
             >
-              <span className="truncate block">{flat}</span>
+              <span className="truncate block text-sm sm:text-base text-gray-700">{flat}</span>
             </div>
           ))}
 
           {/* Data rows */}
           {data.blocks.map((block, blockIndex) => (
             <React.Fragment key={block}>
-              {/* Block header */}
+              {/* Enhanced block header */}
               <div
-                className="sticky left-0 z-10 bg-muted border-r border-border p-3 font-semibold text-center overflow-hidden"
+                className="sticky left-0 z-10 bg-gray-100 border-r-2 border-gray-300 p-4 font-bold text-center overflow-hidden shadow-sm"
                 role="rowheader"
                 aria-label={`Block ${block}`}
                 title={block}
               >
-                <span className="truncate block">{block}</span>
+                <span className="truncate block text-sm sm:text-base text-gray-700">{block}</span>
               </div>
 
               {/* Cells for this block */}

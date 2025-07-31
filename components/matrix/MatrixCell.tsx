@@ -78,21 +78,31 @@ const MatrixCell = React.forwardRef<HTMLDivElement, MatrixCellProps>(
 
     const formatValue = React.useCallback((value: string | number | null) => {
       if (value === null || value === undefined || value === '') {
-        return type === 'amc' ? '₹0' : 'Not Assigned';
+        return { main: type === 'amc' ? '—' : '—', secondary: type === 'amc' ? 'No Payment' : 'Unassigned' };
       }
       
       if (type === 'amc' && typeof value === 'number') {
-        return `₹${value.toLocaleString('en-IN')}`;
+        // Format currency with better readability
+        if (value >= 100000) {
+          return { main: `₹${(value / 100000).toFixed(1)}L`, secondary: `₹${value.toLocaleString('en-IN')}` };
+        } else if (value >= 1000) {
+          return { main: `₹${(value / 1000).toFixed(0)}K`, secondary: `₹${value.toLocaleString('en-IN')}` };
+        } else {
+          return { main: `₹${value}`, secondary: null };
+        }
       }
       
       const stringValue = String(value);
       
-      // For sticker type, truncate very long values to prevent overflow
-      if (type === 'sticker' && stringValue.length > 12) {
-        return stringValue.substring(0, 9) + '...';
+      // For sticker type, handle long values better
+      if (type === 'sticker') {
+        if (stringValue.length > 10) {
+          return { main: stringValue.substring(0, 8) + '...', secondary: stringValue };
+        }
+        return { main: stringValue, secondary: null };
       }
       
-      return stringValue;
+      return { main: stringValue, secondary: null };
     }, [type]);
 
     const getCellVariant = React.useCallback(() => {
@@ -107,65 +117,77 @@ const MatrixCell = React.forwardRef<HTMLDivElement, MatrixCellProps>(
     const isEmpty = variant === 'empty';
 
     const cellClasses = cn(
-      // Base styles with improved mobile-first approach and overflow handling
-      'relative min-h-[44px] min-w-[70px] max-w-[120px] p-2 border border-border',
-      'flex items-center justify-center text-xs font-medium',
+      // Enhanced base styles for better desktop visibility
+      'relative min-h-[50px] min-w-[90px] max-w-[140px] p-3 border border-border/60',
+      'flex items-center justify-center text-sm font-medium',
       'transition-all duration-200 ease-in-out overflow-hidden',
+      'rounded-sm', // Subtle rounding for modern look
       
-      // Progressive enhancement for larger screens
-      'sm:min-h-[48px] sm:min-w-[80px] sm:max-w-[140px] sm:p-2.5 sm:text-sm',
-      'md:min-h-[52px] md:min-w-[90px] md:max-w-[160px] md:p-3 md:text-sm',
-      'lg:min-h-[56px] lg:min-w-[100px] lg:max-w-[180px] lg:p-4 lg:text-base',
-      'xl:min-h-[60px] xl:min-w-[110px] xl:max-w-[200px]',
+      // Progressive enhancement for larger screens with better spacing
+      'sm:min-h-[55px] sm:min-w-[100px] sm:max-w-[150px] sm:p-3.5 sm:text-sm',
+      'md:min-h-[60px] md:min-w-[110px] md:max-w-[160px] md:p-4 md:text-base',
+      'lg:min-h-[65px] lg:min-w-[120px] lg:max-w-[170px] lg:p-4',
+      'xl:min-h-[70px] xl:min-w-[130px] xl:max-w-[180px] xl:p-5',
       
-      // Interactive states with enhanced touch support
+      // Interactive states with enhanced visual feedback
       isInteractive && [
         'cursor-pointer',
-        // Desktop-only hover effects (avoid on touch devices)
-        'hover:shadow-md hover:scale-[1.02]',
-        // Enhanced focus states for accessibility
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        // Enhanced hover effects for desktop
+        'hover:shadow-lg hover:scale-[1.03] hover:border-primary/30',
+        // Better focus states
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2',
         // Touch-optimized active states
-        'active:scale-95 active:shadow-inner active:bg-muted/50',
-        // Ensure minimum touch target size (44px recommended)
+        'active:scale-[0.98] active:shadow-inner',
+        // Ensure minimum touch target size
         'min-h-[44px] min-w-[44px]',
-        // Prevent text selection and improve touch responsiveness
+        // Prevent text selection
         'select-none touch-manipulation',
-        // Reduce tap delay on mobile
         '[-webkit-tap-highlight-color:transparent]'
       ],
       
-      // Focus states
-      isFocused && 'ring-2 ring-ring ring-offset-2',
+      // Enhanced focus states
+      isFocused && 'ring-2 ring-primary/50 ring-offset-2',
       
-      // Hover states
-      isHovered && !isLoading && !hasError && 'shadow-lg',
+      // Enhanced hover states with better visual feedback
+      isHovered && !isLoading && !hasError && 'shadow-xl border-primary/40',
       
-      // Variant styles
+      // Improved variant styles with better contrast
       {
-        'bg-background text-foreground': variant === 'filled',
-        'bg-muted text-muted-foreground': variant === 'empty',
-        'bg-destructive/10 text-destructive border-destructive/20': variant === 'error',
-        'bg-muted animate-pulse': variant === 'loading',
+        // Filled cells - enhanced visibility
+        'bg-white text-gray-900 border-gray-200 shadow-sm': variant === 'filled',
+        // Empty cells - subtle but visible
+        'bg-gray-50 text-gray-500 border-gray-200': variant === 'empty',
+        // Error cells - clear error indication
+        'bg-red-50 text-red-700 border-red-200': variant === 'error',
+        // Loading cells
+        'bg-gray-100 animate-pulse border-gray-200': variant === 'loading',
       },
       
-      // Type-specific styles
+      // Enhanced type-specific styles with better color schemes
       type === 'amc' && {
-        'hover:bg-green-50 hover:border-green-200': variant === 'filled' && isHovered,
-        'hover:bg-red-50 hover:border-red-200': variant === 'empty' && isHovered,
+        // Filled AMC cells - green theme for payments
+        'bg-emerald-50 text-emerald-900 border-emerald-200': variant === 'filled',
+        'hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-emerald-200/50': variant === 'filled' && isHovered,
+        // Empty AMC cells - red theme for missing payments
+        'bg-red-50 text-red-600 border-red-200': variant === 'empty',
+        'hover:bg-red-100 hover:border-red-300': variant === 'empty' && isHovered,
       },
       
       type === 'sticker' && {
-        'hover:bg-blue-50 hover:border-blue-200': variant === 'filled' && isHovered,
-        'hover:bg-orange-50 hover:border-orange-200': variant === 'empty' && isHovered,
+        // Filled sticker cells - blue theme
+        'bg-blue-50 text-blue-900 border-blue-200': variant === 'filled',
+        'hover:bg-blue-100 hover:border-blue-300 hover:shadow-blue-200/50': variant === 'filled' && isHovered,
+        // Empty sticker cells - orange theme
+        'bg-orange-50 text-orange-600 border-orange-200': variant === 'empty',
+        'hover:bg-orange-100 hover:border-orange-300': variant === 'empty' && isHovered,
       },
       
       className
     );
 
     const displayValue = React.useMemo(() => {
-      if (isLoading) return '...';
-      if (hasError) return 'Error';
+      if (isLoading) return { main: '...', secondary: null };
+      if (hasError) return { main: 'Error', secondary: null };
       return formatValue(data.value);
     }, [isLoading, hasError, data.value, formatValue]);
 
@@ -178,7 +200,8 @@ const MatrixCell = React.forwardRef<HTMLDivElement, MatrixCellProps>(
       if (hasError) return `${baseLabel}, Error loading data`;
       
       if (type === 'amc') {
-        const amount = data.value ? `Amount: ${formatValue(data.value)}` : 'No payment';
+        const formattedValue = formatValue(data.value);
+        const amount = data.value ? `Amount: ${formattedValue.secondary || formattedValue.main}` : 'No payment';
         const date = data.metadata?.paymentDate ? `, Payment date: ${data.metadata.paymentDate}` : '';
         return `${baseLabel}, ${amount}${date}`;
       }
@@ -212,41 +235,84 @@ const MatrixCell = React.forwardRef<HTMLDivElement, MatrixCellProps>(
         data-variant={variant}
         {...props}
       >
-        {/* Main content */}
-        <div className="flex flex-col items-center justify-center text-center w-full h-full overflow-hidden">
-          <span className={cn(
-            'truncate w-full text-center leading-tight',
-            isEmpty && 'text-xs opacity-70',
-            variant === 'error' && 'text-destructive',
+        {/* Enhanced main content with better typography */}
+        <div className="flex flex-col items-center justify-center text-center w-full h-full overflow-hidden gap-1">
+          {/* Primary value - larger and more prominent */}
+          <div className={cn(
+            'font-semibold leading-tight',
+            // Responsive font sizing for better desktop visibility
+            'text-sm sm:text-base md:text-lg lg:text-xl',
+            // Enhanced contrast and visibility
+            isEmpty && 'text-gray-400 font-normal text-xs sm:text-sm',
+            variant === 'error' && 'text-red-600',
+            variant === 'filled' && type === 'amc' && 'text-emerald-800',
+            variant === 'filled' && type === 'sticker' && 'text-blue-800',
             // Ensure text fits within cell bounds
             'max-w-full overflow-hidden text-ellipsis whitespace-nowrap'
-          )} title={displayValue}>
-            {displayValue}
-          </span>
+          )} title={displayValue.secondary || displayValue.main}>
+            {displayValue.main}
+          </div>
           
-          {/* Additional metadata for sticker type */}
+          {/* Secondary value - smaller, detailed info on hover/large screens */}
+          {displayValue.secondary && !isEmpty && (
+            <div className={cn(
+              'text-xs font-normal opacity-75 leading-tight',
+              'hidden lg:block', // Only show on large screens
+              'max-w-full overflow-hidden text-ellipsis whitespace-nowrap',
+              type === 'amc' && 'text-emerald-600',
+              type === 'sticker' && 'text-blue-600'
+            )} title={displayValue.secondary}>
+              {displayValue.secondary}
+            </div>
+          )}
+          
+          {/* Payment date indicator for AMC */}
+          {type === 'amc' && data.metadata?.paymentDate && !isEmpty && (
+            <div className="text-xs opacity-60 font-normal hidden xl:block">
+              {new Date(data.metadata.paymentDate).toLocaleDateString('en-IN', { 
+                month: 'short', 
+                day: 'numeric' 
+              })}
+            </div>
+          )}
+          
+          {/* Multiple stickers indicator */}
           {type === 'sticker' && data.metadata?.stickerCount && data.metadata.stickerCount > 1 && (
-            <span className="text-xs text-muted-foreground mt-1 truncate w-full" title={`+${data.metadata.stickerCount - 1} more`}>
-              +{data.metadata.stickerCount - 1} more
-            </span>
+            <div className="text-xs opacity-75 font-medium bg-blue-100 px-1.5 py-0.5 rounded-full">
+              +{data.metadata.stickerCount - 1}
+            </div>
           )}
         </div>
 
-        {/* Loading indicator */}
+        {/* Enhanced loading indicator */}
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80">
-            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {/* Error indicator */}
+        {/* Enhanced error indicator */}
         {hasError && (
-          <div className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+          <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
         )}
 
-        {/* Hover indicator for interactive cells */}
+        {/* Enhanced hover indicator with subtle glow */}
         {isInteractive && isHovered && !isLoading && !hasError && (
-          <div className="absolute inset-0 border-2 border-primary/20 rounded pointer-events-none" />
+          <div className={cn(
+            "absolute inset-0 rounded-sm pointer-events-none",
+            "border-2 border-primary/30",
+            type === 'amc' && "border-emerald-400/50 bg-emerald-50/20",
+            type === 'sticker' && "border-blue-400/50 bg-blue-50/20"
+          )} />
+        )}
+
+        {/* Value indicator for filled cells */}
+        {variant === 'filled' && !isLoading && !hasError && (
+          <div className={cn(
+            "absolute top-1 left-1 w-2 h-2 rounded-full",
+            type === 'amc' && "bg-emerald-400",
+            type === 'sticker' && "bg-blue-400"
+          )} />
         )}
       </div>
     );

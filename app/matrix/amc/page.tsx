@@ -1,9 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 import { MatrixNavigation } from '@/components/matrix/MatrixNavigation';
 import { Navigation } from '@/components/Navigation';
-import { AmcMatrix } from '@/components/matrix/AmcMatrix';
+// Dynamic import to prevent SSR issues
+const AmcMatrix = dynamic(() => import('@/components/matrix/AmcMatrix').then(mod => ({ default: mod.AmcMatrix })), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center p-8">Loading...</div>
+});
 import { MatrixErrorBoundary } from '@/components/matrix/MatrixErrorBoundary';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { BarChart3 } from 'lucide-react';

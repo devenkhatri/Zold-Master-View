@@ -1,9 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 import { MatrixNavigation } from '@/components/matrix/MatrixNavigation';
 import { Navigation } from '@/components/Navigation';
-import { StickerMatrix } from '@/components/matrix/StickerMatrix';
+// Dynamic import to prevent SSR issues
+const StickerMatrix = dynamic(() => import('@/components/matrix/StickerMatrix').then(mod => ({ default: mod.StickerMatrix })), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center p-8">Loading...</div>
+});
 import { MatrixErrorBoundary } from '@/components/matrix/MatrixErrorBoundary';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useStickerData } from '@/hooks/useStickerData';
