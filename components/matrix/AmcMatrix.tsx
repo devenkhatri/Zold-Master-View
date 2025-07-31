@@ -67,7 +67,7 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
     return availableYears.length > 0 ? availableYears[0] : new Date().getFullYear();
   });
 
-  // Debug: Track data changes
+  // Debug: Track data changes (optimized to prevent loops)
   React.useEffect(() => {
     console.log(`AMC Matrix: Data changed - Owners: ${owners.length}, Receipts: ${receipts.length}, Available Years: [${availableYears.join(', ')}], Selected Year: ${selectedYear}`);
 
@@ -100,16 +100,17 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
 
       console.log(`AMC Matrix: Receipt year distribution:`, yearDistribution);
     }
-  }, [owners.length, receipts.length, availableYears, selectedYear]);
+  }, [owners.length, receipts.length, availableYears.length, selectedYear]); // Fixed: use availableYears.length instead of the array
 
-  // Update selected year when available years change
+  // Update selected year when available years change (optimized to prevent loops)
   React.useEffect(() => {
     if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+      console.log(`AMC Matrix: Updating selected year from ${selectedYear} to ${availableYears[0]}`);
       setSelectedYear(availableYears[0]);
     }
-  }, [availableYears, selectedYear]);
+  }, [availableYears.join(','), selectedYear]); // Fixed: use string join to prevent array reference changes
 
-  // Process AMC data for the selected year with error handling
+  // Process AMC data for the selected year with error handling (optimized to prevent loops)
   const amcData: AmcMatrixData = React.useMemo(() => {
     if (isLoading || hasError || availableYears.length === 0) {
       return {
@@ -147,9 +148,9 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
         totalByFlat: {}
       };
     }
-  }, [processAmcDataForYear, selectedYear, isLoading, hasError, availableYears, errorHandler, owners.length, receipts.length]);
+  }, [processAmcDataForYear, selectedYear, isLoading, hasError, availableYears.length, owners.length, receipts.length]); // Fixed: removed errorHandler and use availableYears.length
 
-  // Data integrity check - ensure matrix only shows data for selected year
+  // Data integrity check - ensure matrix only shows data for selected year (optimized to prevent loops)
   React.useEffect(() => {
     if (!isLoading && !hasError && amcData.cells.length > 0) {
       let crossYearDataFound = false;
@@ -194,7 +195,7 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
         console.log(`✅ Data integrity check passed: All matrix data is from year ${selectedYear}`);
       }
     }
-  }, [amcData, selectedYear, isLoading, hasError, errorHandler]);
+  }, [amcData.cells.length, selectedYear, isLoading, hasError]); // Fixed: removed errorHandler and use cells.length instead of full amcData
 
   const handleYearChange = React.useCallback((year: string) => {
     try {

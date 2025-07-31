@@ -186,23 +186,26 @@ export const useAmcData = (): UseAmcDataReturn => {
     }
   }, [fetchAmcData]);
 
-  // Auto-refresh every 5 minutes if the page is visible
+  // Auto-refresh every 10 minutes if the page is visible (reduced frequency to prevent loops)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && data && meta) {
         const cacheAge = Date.now() - new Date(meta.receivedAt).getTime();
-        const fiveMinutes = 5 * 60 * 1000;
+        const tenMinutes = 10 * 60 * 1000; // Increased from 5 to 10 minutes
         
-        if (cacheAge > fiveMinutes) {
+        if (cacheAge > tenMinutes) {
           console.log('Auto-refreshing AMC data due to cache age');
           fetchAmcData();
         }
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [data, meta, fetchAmcData]);
+    // Only add listener if we have data to avoid unnecessary checks
+    if (data && meta) {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }
+  }, [data?.receipts?.length, meta?.receivedAt, fetchAmcData]); // Fixed: use specific data properties instead of full objects
 
   return {
     owners: data?.owners || [],

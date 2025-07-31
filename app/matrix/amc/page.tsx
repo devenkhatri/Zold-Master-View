@@ -14,13 +14,15 @@ function AmcMatrixPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    // Set page title and meta description
-    document.title = 'AMC Payment Matrix - Property Management';
+    // Set page title and meta description only once
+    if (document.title !== 'AMC Payment Matrix - Property Management') {
+      document.title = 'AMC Payment Matrix - Property Management';
+    }
     const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
+    if (metaDescription && metaDescription.getAttribute('content') !== 'View AMC payments organized by block and flat for each year. Analyze payment patterns and identify gaps in collections.') {
       metaDescription.setAttribute('content', 'View AMC payments organized by block and flat for each year. Analyze payment patterns and identify gaps in collections.');
     }
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   const handleCellClick = (cellData: any) => {
     // Handle cell click - could show detailed payment information

@@ -48,8 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkAuth();
     
-    // Set up a timer to check auth status periodically (every 5 minutes)
-    const authCheckInterval = setInterval(checkAuth, 5 * 60 * 1000);
+    // Set up a timer to check auth status periodically (every 10 minutes instead of 5)
+    // Also only check when the page is visible to prevent unnecessary API calls
+    const authCheckInterval = setInterval(() => {
+      if (!document.hidden) {
+        checkAuth();
+      }
+    }, 10 * 60 * 1000); // Increased to 10 minutes
     
     // Clean up the interval on unmount
     return () => clearInterval(authCheckInterval);
