@@ -4,10 +4,12 @@ import { Receipt, Owner } from '@/types/property';
 
 // Cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_VERSION = 'v7-robust-date-parsing'; // Increment this to invalidate old cache
 let cachedData: {
   receipts: Receipt[];
   owners: Owner[];
   timestamp: number;
+  version: string;
 } | null = null;
 
 // AMC-specific error class
@@ -94,6 +96,27 @@ function transformAmcData(receipts: any[], owners: any[]) {
 // Check if cached data is still valid
 function isCacheValid(): boolean {
   if (!cachedData) return false;
+  if (cachedData.version !== CACHE_VERSION) {
+    console.log('🔧 Cache version mismatch, invalidating cache for year filter fix');
+    cachedData = null;
+    return false;
+  }
+  
+  // Additional validation: Check if cached data has year filtering issues
+  if (cachedData.receipts && cachedData.receipts.length > 0) {
+    const yearDistribution = cachedData.receipts.reduce((acc, receipt) => {
+      try {
+        const year = new Date(receipt.paymentDate).getFullYear();
+        acc[year] = (acc[year] || 0) + 1;
+      } catch (e) {
+        // Ignore parsing errors
+      }
+      return acc;
+    }, {} as Record<number, number>);
+    
+    console.log('📊 Cached data year distribution:', yearDistribution);
+  }
+  
   return Date.now() - cachedData.timestamp < CACHE_DURATION;
 }
 
@@ -130,13 +153,23 @@ async function fetchFreshAmcData() {
       console.warn('AMC data validation warnings:', validationErrors);
     }
 
+    // Log receipt sources for debugging
+    const receiptSources = validatedReceipts.reduce((acc, receipt) => {
+      const source = receipt.receiptNo.includes('AMC') ? 'AMC' : 
+                    receipt.receiptNo.includes('Misc') ? 'Misc' : 'Other';
+      acc[source] = (acc[source] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
     console.log(`Successfully fetched and validated AMC data: ${validatedReceipts.length} receipts, ${validatedOwners.length} owners`);
+    console.log('Receipt sources breakdown:', receiptSources);
 
     // Update cache
     cachedData = {
       receipts: validatedReceipts,
       owners: validatedOwners,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      version: CACHE_VERSION
     };
 
     return {
@@ -181,6 +214,7 @@ export async function GET(request: Request) {
         fromCache: true
       };
     } else {
+      console.log('Fetching fresh AMC data (cache invalid or force refresh requested)');
       // Fetch fresh data
       amcData = await fetchFreshAmcData();
     }
@@ -288,7 +322,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        message: 'Cache cleared successfully',
+        message: 'AMC cache cleared successfully - will fetch fresh AMC-only data on next request',
         timestamp: new Date().toISOString()
       });
     }

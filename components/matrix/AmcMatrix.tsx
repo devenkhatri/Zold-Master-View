@@ -67,6 +67,41 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
     return availableYears.length > 0 ? availableYears[0] : new Date().getFullYear();
   });
 
+  // Debug: Track data changes
+  React.useEffect(() => {
+    console.log(`AMC Matrix: Data changed - Owners: ${owners.length}, Receipts: ${receipts.length}, Available Years: [${availableYears.join(', ')}], Selected Year: ${selectedYear}`);
+
+    if (receipts.length > 0) {
+      // Log year distribution in current receipt data
+      const yearDistribution = receipts.reduce((acc, receipt) => {
+        try {
+          if (receipt.paymentDate) {
+            let receiptDate: Date;
+            if (typeof receipt.paymentDate === 'string') {
+              if (receipt.paymentDate.includes('T') || receipt.paymentDate.includes('Z')) {
+                receiptDate = new Date(receipt.paymentDate);
+              } else {
+                receiptDate = new Date(receipt.paymentDate + 'T00:00:00.000Z');
+              }
+            } else {
+              receiptDate = new Date(receipt.paymentDate);
+            }
+
+            const year = receiptDate.getFullYear();
+            if (!isNaN(year)) {
+              acc[year] = (acc[year] || 0) + 1;
+            }
+          }
+        } catch (error) {
+          // Ignore parsing errors for this debug log
+        }
+        return acc;
+      }, {} as Record<number, number>);
+
+      console.log(`AMC Matrix: Receipt year distribution:`, yearDistribution);
+    }
+  }, [owners.length, receipts.length, availableYears, selectedYear]);
+
   // Update selected year when available years change
   React.useEffect(() => {
     if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
@@ -89,7 +124,10 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
     }
 
     try {
-      return processAmcDataForYear(selectedYear);
+      console.log(`AMC Matrix: Processing data for year ${selectedYear}`);
+      const result = processAmcDataForYear(selectedYear);
+      console.log(`AMC Matrix: Processed ${result.cells.flat().filter(cell => cell.value).length} cells with data for year ${selectedYear}`);
+      return result;
     } catch (error) {
       console.error('Error processing AMC data for year:', selectedYear, error);
       errorHandler.addError({
@@ -109,7 +147,54 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
         totalByFlat: {}
       };
     }
-  }, [processAmcDataForYear, selectedYear, isLoading, hasError, availableYears, errorHandler]);
+  }, [processAmcDataForYear, selectedYear, isLoading, hasError, availableYears, errorHandler, owners.length, receipts.length]);
+
+  // Data integrity check - ensure matrix only shows data for selected year
+  React.useEffect(() => {
+    if (!isLoading && !hasError && amcData.cells.length > 0) {
+      let crossYearDataFound = false;
+      let crossYearExamples: string[] = [];
+
+      amcData.cells.forEach((blockRow, blockIndex) => {
+        blockRow.forEach((cell, flatIndex) => {
+          if (cell.metadata?.paymentDate) {
+            try {
+              let cellDate: Date;
+              if (typeof cell.metadata.paymentDate === 'string') {
+                if (cell.metadata.paymentDate.includes('T') || cell.metadata.paymentDate.includes('Z')) {
+                  cellDate = new Date(cell.metadata.paymentDate);
+                } else {
+                  cellDate = new Date(cell.metadata.paymentDate + 'T00:00:00.000Z');
+                }
+              } else {
+                cellDate = new Date(cell.metadata.paymentDate);
+              }
+
+              const cellYear = cellDate.getFullYear();
+              if (cellYear !== selectedYear) {
+                crossYearDataFound = true;
+                crossYearExamples.push(`${cell.blockNumber}-${cell.flatNumber}: ${cellYear} (should be ${selectedYear})`);
+                console.error(`❌ CROSS-YEAR DATA DETECTED: Cell ${cell.blockNumber}-${cell.flatNumber} shows data from year ${cellYear} but selected year is ${selectedYear}`, cell);
+              }
+            } catch (error) {
+              console.warn('Error validating cell date:', cell, error);
+            }
+          }
+        });
+      });
+
+      if (crossYearDataFound) {
+        console.error(`🚨 CRITICAL: Found cross-year data contamination! Examples:`, crossYearExamples.slice(0, 5));
+        errorHandler.addError({
+          type: 'validation',
+          message: `Matrix contains data from wrong years. Found ${crossYearExamples.length} cells with incorrect year data.`,
+          details: { selectedYear, examples: crossYearExamples.slice(0, 10) },
+        });
+      } else {
+        console.log(`✅ Data integrity check passed: All matrix data is from year ${selectedYear}`);
+      }
+    }
+  }, [amcData, selectedYear, isLoading, hasError, errorHandler]);
 
   const handleYearChange = React.useCallback((year: string) => {
     try {
@@ -117,6 +202,7 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
       if (isNaN(yearNum)) {
         throw new Error(`Invalid year: ${year}`);
       }
+      console.log(`AMC Matrix: Changing year from ${selectedYear} to ${yearNum}`);
       setSelectedYear(yearNum);
       // Clear any previous data processing errors when changing year
       errorHandler.clearErrors();
@@ -128,7 +214,7 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
         details: { year, error },
       });
     }
-  }, [errorHandler]);
+  }, [errorHandler, selectedYear]);
 
   const formatCurrency = React.useCallback((amount: number) => {
     return `₹${amount.toLocaleString('en-IN')}`;
@@ -400,3 +486,4 @@ const AmcMatrix: React.FC<AmcMatrixProps> = ({
 };
 
 export { AmcMatrix };
+export default AmcMatrix;

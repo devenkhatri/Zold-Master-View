@@ -44,14 +44,14 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
       if (type === 'amc') {
         const amcData = data as AmcMatrixData;
         if (format === 'csv') {
-          exportAmcToCsv(amcData, options);
+          await exportAmcToCsv(amcData, options);
         } else {
           exportAmcToExcel(amcData, options);
         }
       } else {
         const stickerData = data as StickerMatrixData;
         if (format === 'csv') {
-          exportStickerToCsv(stickerData, options);
+          await exportStickerToCsv(stickerData, options);
         } else {
           exportStickerToExcel(stickerData, options);
         }

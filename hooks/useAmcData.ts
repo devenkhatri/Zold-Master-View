@@ -178,9 +178,12 @@ export const useAmcData = (): UseAmcDataReturn => {
     }
   }, [fetchAmcData, retryCount]);
 
-  // Initial data fetch
+  // Initial data fetch - only in browser environment
   useEffect(() => {
-    fetchAmcData();
+    // Prevent API calls during build time
+    if (typeof window !== 'undefined') {
+      fetchAmcData();
+    }
   }, [fetchAmcData]);
 
   // Auto-refresh every 5 minutes if the page is visible

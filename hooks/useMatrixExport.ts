@@ -2,7 +2,6 @@
 
 import { useCallback } from 'react';
 import * as XLSX from 'xlsx';
-import Papa from 'papaparse';
 import { AmcMatrixData, StickerMatrixData } from './useMatrixData';
 
 export interface ExportOptions {
@@ -19,7 +18,7 @@ export const useMatrixExport = () => {
   }, []);
 
   // Export AMC matrix to CSV
-  const exportAmcToCsv = useCallback((data: AmcMatrixData, options: ExportOptions = {}) => {
+  const exportAmcToCsv = useCallback(async (data: AmcMatrixData, options: ExportOptions = {}) => {
     const { filename, includeMetadata = true, includeTimestamp = true } = options;
     
     // Prepare CSV data
@@ -70,7 +69,8 @@ export const useMatrixExport = () => {
     csvData.push(totalsRow);
     
     // Convert to CSV and download
-    const csv = Papa.unparse(csvData);
+    const Papa = await import('papaparse');
+    const csv = Papa.default.unparse(csvData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -167,7 +167,7 @@ export const useMatrixExport = () => {
   }, [generateFilename]);
 
   // Export Sticker matrix to CSV
-  const exportStickerToCsv = useCallback((data: StickerMatrixData, options: ExportOptions = {}) => {
+  const exportStickerToCsv = useCallback(async (data: StickerMatrixData, options: ExportOptions = {}) => {
     const { filename, includeMetadata = true, includeTimestamp = true } = options;
     
     // Prepare CSV data
@@ -231,7 +231,8 @@ export const useMatrixExport = () => {
     }
     
     // Convert to CSV and download
-    const csv = Papa.unparse(csvData);
+    const Papa = await import('papaparse');
+    const csv = Papa.default.unparse(csvData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);

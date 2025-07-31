@@ -390,3 +390,4 @@ const StickerMatrix: React.FC<StickerMatrixProps> = ({
 };
 
 export { StickerMatrix };
+export default StickerMatrix;

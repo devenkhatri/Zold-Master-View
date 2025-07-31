@@ -86,3 +86,10 @@
   - Ensure proper active state highlighting for matrix routes
   - Test navigation flow between existing views and new matrix views
   - _Requirements: 3.1, 3.2, 3.3_
+
+- [x] 13. Fix year-specific data filtering issue
+  - Investigate and fix critical bug where AMC matrix shows data from wrong years
+  - Ensure year filtering logic correctly isolates data by payment year
+  - Add comprehensive logging and debugging for year filtering
+  - Test with mixed year data to ensure proper isolation
+  - _Requirements: 1.3, 1.4, 1.5_

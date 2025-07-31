@@ -189,9 +189,12 @@ export const useStickerData = (): UseStickerDataReturn => {
     }
   }, [fetchStickerData, retryCount]);
 
-  // Initial data fetch
+  // Initial data fetch - only in browser environment
   useEffect(() => {
-    fetchStickerData();
+    // Prevent API calls during build time
+    if (typeof window !== 'undefined') {
+      fetchStickerData();
+    }
   }, [fetchStickerData]);
 
   // Auto-refresh every 5 minutes if the page is visible

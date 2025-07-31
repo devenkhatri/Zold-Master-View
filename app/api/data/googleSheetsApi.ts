@@ -440,6 +440,7 @@ export async function fetchReceipts(): Promise<Receipt[]> {
 // Fetch only AMC receipts
 export async function fetchAmcReceipts(): Promise<Receipt[]> {
   console.log('Fetching AMC receipts only from sheets:', AMC_RECEIPTS_SHEETS);
+  console.log('All receipt sheets available:', RECEIPTS_SHEETS);
 
   if (AMC_RECEIPTS_SHEETS.length === 0) {
     console.warn('No AMC receipt sheets found. Falling back to filtering all receipts by receipt number pattern.');

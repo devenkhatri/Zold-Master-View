@@ -25,6 +25,78 @@ export interface StickerMatrixData extends MatrixData {
   multipleStickers: string[];
 }
 
+// Helper function to parse dates in multiple formats
+const parseReceiptDate = (dateString: string): Date | null => {
+  if (!dateString || typeof dateString !== 'string') {
+    return null;
+  }
+
+  // Try different date formats
+  let date: Date;
+
+  // Format 1: ISO date strings (with timezone) - e.g., "2024-04-14T00:00:00.000Z"
+  if (dateString.includes('T') || dateString.includes('Z')) {
+    date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Format 2: YYYY-MM-DD format - e.g., "2024-04-14"
+  if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    date = new Date(dateString + 'T00:00:00.000Z');
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Format 3: MM/DD/YYYY format - e.g., "5/5/2025", "12/31/2024"
+  if (dateString.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+    const [month, day, year] = dateString.split('/').map(Number);
+    date = new Date(year, month - 1, day); // month is 0-based in Date constructor
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Format 4: DD/MM/YYYY format - e.g., "14/04/2024"
+  if (dateString.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+    const parts = dateString.split('/').map(Number);
+    // Try DD/MM/YYYY if MM/DD/YYYY didn't work or seems invalid
+    if (parts[1] > 12) { // Day > 12, so it must be DD/MM/YYYY
+      const [day, month, year] = parts;
+      date = new Date(year, month - 1, day);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+  }
+
+  // Format 5: Try native Date parsing as fallback
+  date = new Date(dateString);
+  if (!isNaN(date.getTime())) {
+    return date;
+  }
+
+  return null;
+};
+
+// Helper function to get Indian financial year from a date
+// Indian financial year runs from April 1st to March 31st
+// For example: April 2024 to March 2025 = FY 2024-25 (displayed as 2024)
+const getIndianFinancialYear = (date: Date): number => {
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0-based (0 = January, 3 = April)
+  
+  // If month is April (3) or later, it belongs to the current year's financial year
+  // If month is January (0) to March (2), it belongs to the previous year's financial year
+  if (month >= 3) { // April to December
+    return year;
+  } else { // January to March
+    return year - 1;
+  }
+};
+
 // Helper function to extract unique blocks and flats with error handling
 const extractBlocksAndFlats = (owners: Owner[]) => {
   try {
@@ -79,7 +151,7 @@ const extractBlocksAndFlats = (owners: Owner[]) => {
   }
 };
 
-// Helper function to extract available years from receipts with error handling
+// Helper function to extract available Indian financial years from receipts
 const extractAvailableYears = (receipts: Receipt[]): { years: number[]; errors: string[] } => {
   try {
     if (!Array.isArray(receipts)) {
@@ -101,16 +173,27 @@ const extractAvailableYears = (receipts: Receipt[]): { years: number[]; errors: 
       }
       
       try {
-        const date = new Date(receipt.paymentDate);
-        const year = date.getFullYear();
+        const date = parseReceiptDate(receipt.paymentDate);
+        if (!date) {
+          errors.push(`Receipt at index ${index} has invalid date format: ${receipt.paymentDate}`);
+          return;
+        }
         
-        if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 10) {
-          errors.push(`Receipt at index ${index} has invalid year: ${year}`);
+        // Get Indian financial year instead of calendar year
+        const financialYear = getIndianFinancialYear(date);
+        
+        if (isNaN(financialYear) || financialYear < 1900 || financialYear > new Date().getFullYear() + 10) {
+          errors.push(`Receipt at index ${index} has invalid financial year: ${financialYear}`);
         } else {
-          yearSet.add(year);
+          yearSet.add(financialYear);
+        }
+        
+        // Debug logging for financial year calculation
+        if (receipt.blockNumber === 'G' && receipt.flatNumber === '104') {
+          console.log(`📅 FY DEBUG: Receipt ${receipt.id} - Date: ${receipt.paymentDate}, Parsed Date: ${date.toISOString()}, Calendar Year: ${date.getFullYear()}, Month: ${date.getMonth() + 1}, Financial Year: ${financialYear}`);
         }
       } catch (dateError) {
-        errors.push(`Receipt at index ${index} has invalid date format: ${receipt.paymentDate}`);
+        errors.push(`Receipt at index ${index} has invalid date format: ${receipt.paymentDate} - Error: ${dateError}`);
       }
     });
     
@@ -119,6 +202,8 @@ const extractAvailableYears = (receipts: Receipt[]): { years: number[]; errors: 
     if (errors.length > 0) {
       console.warn('Data validation warnings in extractAvailableYears:', errors);
     }
+    
+    console.log(`📅 Available Indian Financial Years:`, years);
     
     return { years, errors };
   } catch (error) {
@@ -147,24 +232,210 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
       console.warn('Data validation warnings in processAmcData:', allErrors);
     }
   
-    // Filter receipts for the selected year with error handling
+    // CRITICAL FIX: Filter receipts by Indian Financial Year (April to March)
+    console.log(`🔧 STARTING INDIAN FY FILTER: Processing ${receipts.length} receipts for Financial Year ${selectedYear}-${(selectedYear + 1).toString().slice(-2)}`);
+    
     const yearReceipts = receipts.filter(receipt => {
       try {
-        if (!receipt || !receipt.paymentDate) return false;
-        const receiptYear = new Date(receipt.paymentDate).getFullYear();
-        return !isNaN(receiptYear) && receiptYear === selectedYear;
+        if (!receipt || !receipt.paymentDate) {
+          console.warn('Receipt missing or has no payment date:', receipt);
+          return false;
+        }
+        
+        // Parse the date using robust date parsing function
+        const receiptDate = parseReceiptDate(receipt.paymentDate);
+        
+        // Validate the parsed date
+        if (!receiptDate) {
+          console.warn(`❌ Invalid date format: ${receipt.paymentDate}`, receipt);
+          return false;
+        }
+        
+        // CRITICAL: Get Indian Financial Year instead of calendar year
+        const receiptFinancialYear = getIndianFinancialYear(receiptDate);
+        
+        // Validate the financial year
+        if (isNaN(receiptFinancialYear) || receiptFinancialYear < 1900 || receiptFinancialYear > new Date().getFullYear() + 10) {
+          console.warn(`Invalid financial year calculated: ${receiptFinancialYear} from date ${receipt.paymentDate}`, receipt);
+          return false;
+        }
+        
+        // CRITICAL: Compare financial years
+        const isValidYear = receiptFinancialYear === selectedYear;
+        
+        // Enhanced debug logging for critical blocks
+        if (receipt.blockNumber === 'G' && receipt.flatNumber === '104') {
+          const calendarYear = receiptDate.getFullYear();
+          const month = receiptDate.getMonth() + 1;
+          console.log(`🔍 G-104 FY FILTER: Date=${receipt.paymentDate}, Calendar Year=${calendarYear}, Month=${month}, Financial Year=${receiptFinancialYear}, Selected FY=${selectedYear}, Include=${isValidYear}, Amount=${receipt.paymentAmount}`);
+        }
+        
+        // Log filtered receipts for debugging
+        if (!isValidYear && (receipt.blockNumber === 'G' || receipt.blockNumber === 'B')) {
+          const calendarYear = receiptDate.getFullYear();
+          console.log(`❌ FILTERED OUT: ${receipt.blockNumber}-${receipt.flatNumber} FY ${receiptFinancialYear} (Calendar ${calendarYear}) != Selected FY ${selectedYear}`);
+        }
+        
+        return isValidYear;
       } catch (error) {
-        console.warn('Error processing receipt date:', receipt, error);
+        console.error('CRITICAL ERROR in financial year filtering:', error, receipt);
         return false;
       }
     });
+    
+    console.log(`🔍 YEAR FILTER DEBUG: Filtered ${yearReceipts.length} receipts for year ${selectedYear} from ${receipts.length} total receipts`);
+    
+    // Critical debugging: Log all receipts for G-104 to understand the issue
+    const g104Receipts = receipts.filter(r => r.blockNumber === 'G' && r.flatNumber === '104');
+    if (g104Receipts.length > 0) {
+      console.log(`🏠 ALL G-104 RECEIPTS IN DATA:`, g104Receipts.map(r => ({
+        id: r.id,
+        paymentDate: r.paymentDate,
+        year: new Date(r.paymentDate).getFullYear(),
+        amount: r.paymentAmount,
+        receiptNo: r.receiptNo
+      })));
+    }
+    
+    const g104FilteredReceipts = yearReceipts.filter(r => r.blockNumber === 'G' && r.flatNumber === '104');
+    console.log(`🏠 FILTERED G-104 RECEIPTS FOR YEAR ${selectedYear}:`, g104FilteredReceipts.map(r => ({
+      id: r.id,
+      paymentDate: r.paymentDate,
+      year: new Date(r.paymentDate).getFullYear(),
+      amount: r.paymentAmount,
+      receiptNo: r.receiptNo
+    })));
+    
+    // Enhanced debugging for year filtering
+    if (receipts.length > 0) {
+      // Analyze both calendar and financial years in the data
+      const calendarYearAnalysis = receipts.reduce((acc, receipt) => {
+        try {
+          if (receipt.paymentDate) {
+            const receiptDate = parseReceiptDate(receipt.paymentDate);
+            if (receiptDate) {
+              const calendarYear = receiptDate.getFullYear();
+              if (!isNaN(calendarYear)) {
+                acc[calendarYear] = (acc[calendarYear] || 0) + 1;
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('Error analyzing calendar year:', receipt, error);
+        }
+        return acc;
+      }, {} as Record<number, number>);
+      
+      const financialYearAnalysis = receipts.reduce((acc, receipt) => {
+        try {
+          if (receipt.paymentDate) {
+            const receiptDate = parseReceiptDate(receipt.paymentDate);
+            if (receiptDate) {
+              const financialYear = getIndianFinancialYear(receiptDate);
+              if (!isNaN(financialYear)) {
+                acc[financialYear] = (acc[financialYear] || 0) + 1;
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('Error analyzing financial year:', receipt, error);
+        }
+        return acc;
+      }, {} as Record<number, number>);
+      
+      console.log(`📅 Calendar Year distribution:`, calendarYearAnalysis);
+      console.log(`📅 Financial Year distribution:`, financialYearAnalysis);
+      console.log(`📅 Available Financial Years:`, Object.keys(financialYearAnalysis).map(Number).sort());
+      
+      if (yearReceipts.length === 0) {
+        console.warn(`No receipts found for year ${selectedYear}. Year distribution:`, yearAnalysis);
+      }
+      
+      // Log specific examples for debugging with both calendar and financial years
+      const exampleReceipts = receipts.slice(0, 5).map(r => ({
+        id: r.id,
+        paymentDate: r.paymentDate,
+        calendarYear: r.paymentDate ? (() => {
+          try {
+            const date = parseReceiptDate(r.paymentDate);
+            return date ? date.getFullYear() : 'Parse Error';
+          } catch (e) {
+            return 'Error';
+          }
+        })() : 'No date',
+        financialYear: r.paymentDate ? (() => {
+          try {
+            const date = parseReceiptDate(r.paymentDate);
+            return date ? getIndianFinancialYear(date) : 'Parse Error';
+          } catch (e) {
+            return 'Error';
+          }
+        })() : 'No date',
+        month: r.paymentDate ? (() => {
+          try {
+            const date = parseReceiptDate(r.paymentDate);
+            return date ? date.getMonth() + 1 : 'Parse Error';
+          } catch (e) {
+            return 'Error';
+          }
+        })() : 'No date',
+        blockFlat: `${r.blockNumber}-${r.flatNumber}`,
+        amount: r.paymentAmount
+      }));
+      console.log(`📊 Example receipts (Calendar vs Financial Year):`, exampleReceipts);
+    }
   
+    // CRITICAL VALIDATION: Double-check all filtered receipts are from correct financial year
+    console.log(`🔍 FY VALIDATION: Checking ${yearReceipts.length} filtered receipts for Financial Year ${selectedYear}-${(selectedYear + 1).toString().slice(-2)}`);
+    const invalidYearReceipts = yearReceipts.filter(receipt => {
+      const receiptDate = parseReceiptDate(receipt.paymentDate);
+      if (!receiptDate) return true; // Invalid date should be filtered out
+      const receiptFinancialYear = getIndianFinancialYear(receiptDate);
+      return receiptFinancialYear !== selectedYear;
+    });
+    
+    if (invalidYearReceipts.length > 0) {
+      console.error(`🚨 CRITICAL BUG DETECTED: ${invalidYearReceipts.length} receipts with wrong financial year passed through filter!`);
+      invalidYearReceipts.forEach(receipt => {
+        const receiptDate = parseReceiptDate(receipt.paymentDate);
+        if (receiptDate) {
+          const receiptFinancialYear = getIndianFinancialYear(receiptDate);
+          const calendarYear = receiptDate.getFullYear();
+          console.error(`❌ Wrong FY receipt: ${receipt.blockNumber}-${receipt.flatNumber} FY=${receiptFinancialYear} (Calendar=${calendarYear}) Selected FY=${selectedYear}`, receipt);
+        } else {
+          console.error(`❌ Invalid date receipt: ${receipt.blockNumber}-${receipt.flatNumber} Date=${receipt.paymentDate}`, receipt);
+        }
+      });
+      // Remove invalid receipts as a safety measure
+      const validReceipts = yearReceipts.filter(receipt => {
+        const receiptDate = parseReceiptDate(receipt.paymentDate);
+        if (!receiptDate) return false;
+        const receiptFinancialYear = getIndianFinancialYear(receiptDate);
+        return receiptFinancialYear === selectedYear;
+      });
+      console.log(`🔧 SAFETY FIX: Removed ${yearReceipts.length - validReceipts.length} invalid receipts`);
+      yearReceipts.length = 0;
+      yearReceipts.push(...validReceipts);
+    }
+
     // Group receipts by block and flat with error handling
     const receiptMap = new Map<string, Receipt[]>();
     yearReceipts.forEach((receipt, index) => {
       try {
         if (!receipt.blockNumber || !receipt.flatNumber) {
           console.warn(`Receipt at index ${index} missing block or flat number:`, receipt);
+          return;
+        }
+        
+        // CRITICAL: Final financial year validation before adding to map
+        const receiptDate = parseReceiptDate(receipt.paymentDate);
+        if (!receiptDate) {
+          console.error(`🚨 FINAL DATE VALIDATION FAILED: Receipt ${receipt.blockNumber}-${receipt.flatNumber} has invalid date ${receipt.paymentDate}`);
+          return;
+        }
+        const receiptFinancialYear = getIndianFinancialYear(receiptDate);
+        if (receiptFinancialYear !== selectedYear) {
+          console.error(`🚨 FINAL FY VALIDATION FAILED: Receipt ${receipt.blockNumber}-${receipt.flatNumber} has FY ${receiptFinancialYear} but selected FY is ${selectedYear}`);
           return;
         }
         
@@ -196,6 +467,15 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
             const key = `${block}-${flat}`;
             const blockFlatReceipts = receiptMap.get(key) || [];
             
+            // Debug logging for specific block/flat combination
+            if (block === 'G' && flat === '104') {
+              console.log(`DEBUG: Processing Block G, Flat 104 - Found ${blockFlatReceipts.length} receipts for year ${selectedYear}:`, blockFlatReceipts);
+              blockFlatReceipts.forEach((receipt, idx) => {
+                const receiptYear = new Date(receipt.paymentDate).getFullYear();
+                console.log(`  Receipt ${idx}: ID=${receipt.id}, Year=${receiptYear}, Amount=${receipt.paymentAmount}, Date=${receipt.paymentDate}`);
+              });
+            }
+            
             // Calculate total payment amount for this block/flat combination with error handling
             const totalAmount = blockFlatReceipts.reduce((sum, receipt) => {
               try {
@@ -211,10 +491,31 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
               }
             }, 0);
             
-            // Get the most recent payment for metadata with error handling
+            // CRITICAL: Get the most recent payment for metadata with strict year validation
             let latestReceipt: Receipt | undefined;
             try {
-              latestReceipt = blockFlatReceipts
+              // First, validate all receipts are from the correct financial year
+              const validYearReceipts = blockFlatReceipts.filter(receipt => {
+                if (!receipt.paymentDate) return false;
+                const receiptDate = parseReceiptDate(receipt.paymentDate);
+                if (!receiptDate) {
+                  console.error(`🚨 METADATA DATE PARSE ERROR: Receipt ${receipt.blockNumber}-${receipt.flatNumber} has invalid date ${receipt.paymentDate}`);
+                  return false;
+                }
+                const receiptFinancialYear = getIndianFinancialYear(receiptDate);
+                const isValid = receiptFinancialYear === selectedYear;
+                if (!isValid) {
+                  const calendarYear = receiptDate.getFullYear();
+                  console.error(`🚨 METADATA BUG: Receipt ${receipt.blockNumber}-${receipt.flatNumber} has FY ${receiptFinancialYear} (Calendar ${calendarYear}) but selected FY is ${selectedYear}`);
+                }
+                return isValid;
+              });
+              
+              if (validYearReceipts.length !== blockFlatReceipts.length) {
+                console.error(`🚨 CRITICAL: Found ${blockFlatReceipts.length - validYearReceipts.length} receipts with wrong year for ${block}-${flat}`);
+              }
+              
+              latestReceipt = validYearReceipts
                 .filter(receipt => receipt.paymentDate)
                 .sort((a, b) => {
                   try {
@@ -224,6 +525,22 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
                     return 0;
                   }
                 })[0];
+                
+              // Final validation of latest receipt using financial year
+              if (latestReceipt) {
+                const latestDate = parseReceiptDate(latestReceipt.paymentDate);
+                if (!latestDate) {
+                  console.error(`🚨 LATEST RECEIPT DATE PARSE ERROR: ${block}-${flat} latest receipt has invalid date ${latestReceipt.paymentDate}`);
+                  latestReceipt = undefined; // Clear invalid metadata
+                } else {
+                  const latestFinancialYear = getIndianFinancialYear(latestDate);
+                  if (latestFinancialYear !== selectedYear) {
+                    const calendarYear = latestDate.getFullYear();
+                    console.error(`🚨 LATEST RECEIPT FY VALIDATION FAILED: ${block}-${flat} latest receipt is from FY ${latestFinancialYear} (Calendar ${calendarYear}) but selected FY is ${selectedYear}`);
+                    latestReceipt = undefined; // Clear invalid metadata
+                  }
+                }
+              }
             } catch (error) {
               console.warn('Error finding latest receipt:', blockFlatReceipts, error);
             }
@@ -237,6 +554,20 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
                 receiptNumber: latestReceipt.receiptNo,
               } : undefined
             };
+            
+            // Debug logging for specific block/flat combination
+            if (block === 'G' && flat === '104') {
+              console.log(`🎯 CELL CREATION DEBUG: Created cell for Block G, Flat 104:`, cell);
+              console.log(`🎯 Latest receipt used for G-104:`, latestReceipt);
+              console.log(`🎯 Total amount calculated: ${totalAmount} from ${blockFlatReceipts.length} receipts`);
+              if (latestReceipt) {
+                const receiptYear = new Date(latestReceipt.paymentDate).getFullYear();
+                console.log(`🎯 Latest receipt year: ${receiptYear}, Selected year: ${selectedYear}`);
+                if (receiptYear !== selectedYear) {
+                  console.error(`❌ CRITICAL BUG: Latest receipt is from year ${receiptYear} but selected year is ${selectedYear}!`);
+                }
+              }
+            }
             
             cells[blockIndex][flatIndex] = cell;
             
@@ -266,6 +597,38 @@ const processAmcData = (owners: Owner[], receipts: Receipt[], selectedYear: numb
       }
     });
     
+    // Final validation: Ensure all cell data is from the selected year
+    let validationErrors = 0;
+    cells.forEach((blockRow, blockIndex) => {
+      blockRow.forEach((cell, flatIndex) => {
+        if (cell.metadata?.paymentDate) {
+          try {
+            const cellDate = parseReceiptDate(cell.metadata.paymentDate);
+            if (!cellDate) {
+              console.error(`VALIDATION ERROR: Cell ${cell.blockNumber}-${cell.flatNumber} has invalid date format ${cell.metadata.paymentDate}`, cell);
+              validationErrors++;
+            } else {
+              const cellFinancialYear = getIndianFinancialYear(cellDate);
+              if (cellFinancialYear !== selectedYear) {
+                const calendarYear = cellDate.getFullYear();
+                console.error(`VALIDATION ERROR: Cell ${cell.blockNumber}-${cell.flatNumber} contains data from FY ${cellFinancialYear} (Calendar ${calendarYear}) but selected FY is ${selectedYear}`, cell);
+                validationErrors++;
+              }
+            }
+          } catch (error) {
+            console.warn('Error validating cell date:', cell, error);
+            validationErrors++;
+          }
+        }
+      });
+    });
+    
+    if (validationErrors > 0) {
+      console.error(`Found ${validationErrors} validation errors in matrix data for Financial Year ${selectedYear}-${(selectedYear + 1).toString().slice(-2)}`);
+    } else {
+      console.log(`✅ Matrix data validation passed: All data is from Financial Year ${selectedYear}-${(selectedYear + 1).toString().slice(-2)}`);
+    }
+
     return {
       blocks,
       flats,
